@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>x-dc{display:none}</style>
+<script>
+(function(){
+  var P='equip-';
+  window.__API_BASE=(location.protocol==='file:' ? 'http://127.0.0.1:8000/' : '');
+  var API=window.__API_BASE+'api/data';
+  var put=function(k,v){
+    fetch(API+'/'+encodeURIComponent(k),{method:'PUT',headers:{'Content-Type':'text/plain;charset=utf-8'},body:v})
+      .then(function(r){ if(!r.ok) console.error('[save fail]',k,r.status); })
+      .catch(function(e){ console.error('[save fail]',k,e); });
+  };
+  fetch(API).then(function(r){return r.json();}).then(function(d){
+    var ks=Object.keys(d);
+    if(ks.length){ ks.forEach(function(k){ try{localStorage.setItem(k,d[k]);}catch(e){} }); }
+    else { for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k.indexOf(P)===0) put(k,localStorage.getItem(k)); } }
+  }).catch(function(e){ console.error('[load fail] 後端未啟動？請先執行 app.py',e); }).then(function(){
+    var orig=Storage.prototype.setItem, timers={};
+    Storage.prototype.setItem=function(k,v){
+      orig.call(this,k,v);
+      if(this===localStorage && k.indexOf(P)===0){ clearTimeout(timers[k]); timers[k]=setTimeout(function(){ put(k,v); },400); }
+    };
+    var s=document.createElement('script'); s.src='./support.js'; document.head.appendChild(s);
+  });
+})();
+</script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>body{margin:0;background:#f3f5f4}@media print{[data-noprint]{display:none!important}body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}section{break-inside:avoid-page}}a{color:oklch(0.45 0.07 190)}a:hover{color:oklch(0.35 0.07 190)}</style>
+</helmet>
+<div style="min-height:100vh;color:#1b2422;font-family:'Noto Sans TC',sans-serif;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;gap:24px;padding:32px clamp(16px,4vw,56px);box-sizing:border-box;max-width:1600px;margin:0 auto">
+
+  <header style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px;border-bottom:3px solid #1b2422;padding-bottom:16px">
+    <div style="display:flex;align-items:flex-end;gap:16px">
+      <img src="assets/mascot.png" alt="A3 CIM MRO" style="height:96px;width:auto;display:block;mix-blend-mode:multiply;flex:none">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:15px;color:#5b6663;display:flex;gap:12px"><span>每日戰報</span><span style="font-family:'IBM Plex Mono',monospace">2026.10.13</span></div>
+        <h1 style="margin:0;font-size:clamp(28px,3.4vw,40px);font-weight:900;letter-spacing:0.04em">A3-CIM_MRO</h1>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:14px">
+    <div data-noprint="1" style="display:flex;align-items:flex-start;gap:10px">
+    <div data-noprint="1" style="position:relative">
+      <button onClick="{{ toggleMenu }}" style="font-family:inherit;font-size:15px;font-weight:500;padding:8px 16px;border:0;background:oklch(0.34 0.06 190);color:#fff;cursor:pointer;display:flex;align-items:center;gap:10px" style-hover="background:oklch(0.28 0.06 190)">
+        <span>匯出報告</span><span style="font-size:11px">▼</span>
+      </button>
+      <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid #8f9b97;box-shadow:0 8px 24px rgba(20,30,28,0.12);display:flex;flex-direction:column;min-width:220px;z-index:10">
+          <button onClick="{{ exportPptx }}" style="font-family:inherit;font-size:15px;text-align:left;padding:12px 16px;border:0;border-bottom:1px solid #e3e8e6;background:#fff;cursor:pointer;display:flex;justify-content:space-between;gap:12px" style-hover="background:oklch(0.95 0.018 190)"><span>PowerPoint</span><span style="color:#5b6663;font-family:'IBM Plex Mono',monospace;font-size:13px">.pptx</span></button>
+          <button onClick="{{ exportCsv }}" style="font-family:inherit;font-size:15px;text-align:left;padding:12px 16px;border:0;border-bottom:1px solid #e3e8e6;background:#fff;cursor:pointer;display:flex;justify-content:space-between;gap:12px" style-hover="background:oklch(0.95 0.018 190)"><span>Excel</span><span style="color:#5b6663;font-family:'IBM Plex Mono',monospace;font-size:13px">.csv</span></button>
+          <button onClick="{{ exportPrint }}" style="font-family:inherit;font-size:15px;text-align:left;padding:12px 16px;border:0;background:#fff;cursor:pointer;display:flex;justify-content:space-between;gap:12px" style-hover="background:oklch(0.95 0.018 190)"><span>列印 / 存成 PDF</span><span style="color:#5b6663;font-family:'IBM Plex Mono',monospace;font-size:13px">.pdf</span></button>
+          <div style="padding:8px 16px;font-size:13px;color:#5b6663;background:#f3f5f4;border-bottom:1px solid #e3e8e6">匯出全部分頁：總覽、ALL、K11–K25</div>
+          <button onClick="{{ exportImp }}" style="font-family:inherit;font-size:15px;text-align:left;padding:12px 16px;border:0;background:#fff;cursor:pointer;display:flex;justify-content:space-between;gap:12px;white-space:nowrap" style-hover="background:oklch(0.95 0.018 190)"><span>精進改善區 PowerPoint</span><span style="color:#5b6663;font-family:'IBM Plex Mono',monospace;font-size:13px">.pptx</span></button>
+          <div style="padding:8px 16px;font-size:13px;color:#5b6663;background:#f3f5f4;border-bottom:1px solid #e3e8e6">僅匯出精進改善區</div>
+          <button onClick="{{ exportProj }}" style="font-family:inherit;font-size:15px;text-align:left;padding:12px 16px;border:0;background:#fff;cursor:pointer;display:flex;justify-content:space-between;gap:12px;white-space:nowrap" style-hover="background:oklch(0.95 0.018 190)"><span>專案進度 PowerPoint</span><span style="color:#5b6663;font-family:'IBM Plex Mono',monospace;font-size:13px">.pptx</span></button>
+          <div style="padding:8px 16px;font-size:13px;color:#5b6663;background:#f3f5f4;border-bottom:1px solid #e3e8e6">僅匯出專案進度</div>
+          <button onClick="{{ exportFail }}" style="font-family:inherit;font-size:15px;text-align:left;padding:12px 16px;border:0;background:#fff;cursor:pointer;display:flex;justify-content:space-between;gap:12px;white-space:nowrap" style-hover="background:oklch(0.95 0.018 190)"><span>機故分析 PowerPoint</span><span style="color:#5b6663;font-family:'IBM Plex Mono',monospace;font-size:13px">.pptx</span></button>
+          <div style="padding:8px 16px;font-size:13px;color:#5b6663;background:#f3f5f4;border-bottom:1px solid #e3e8e6">僅匯出機故分析</div>
+          <button onClick="{{ exportKpiPptx }}" style="font-family:inherit;font-size:15px;text-align:left;padding:12px 16px;border:0;border-bottom:1px solid #e3e8e6;background:#fff;cursor:pointer;display:flex;justify-content:space-between;gap:12px;white-space:nowrap" style-hover="background:oklch(0.95 0.018 190)"><span>自動化機故KPI PowerPoint</span><span style="color:#5b6663;font-family:'IBM Plex Mono',monospace;font-size:13px">.pptx</span></button>
+          <div style="padding:8px 16px;font-size:13px;color:#5b6663;background:#f3f5f4;border-bottom:1px solid #e3e8e6">匯出 K11–K25 全部（每站分頁）</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px;background:#fff">
+            <sc-for list="{{ kpiExpBtns }}" as="kb" hint-placeholder-count="5">
+              <button onClick="{{ kb.run }}" style="font-family:inherit;font-size:14px;font-weight:700;padding:6px 12px;border:1px solid oklch(0.34 0.06 190);background:#fff;color:oklch(0.34 0.06 190);cursor:pointer" style-hover="background:oklch(0.34 0.06 190);color:#fff">{{ kb.id }}</button>
+            </sc-for>
+          </div>
+          <div style="padding:8px 16px;font-size:13px;color:#5b6663;background:#f3f5f4">單獨匯出單一站點 KPI</div>
+        </div>
+      </sc-if>
+    </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px;font-size:15px">
+      <div style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:50%;background:oklch(0.68 0.15 150)"></span><span>正常</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:50%;background:oklch(0.78 0.15 75)"></span><span>維修中</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:50%;background:oklch(0.6 0.19 25)"></span><span>停機</span></div>
+      <span data-noprint="1" style="color:#5b6663">點燈號切換狀態</span>
+    </div>
+    </div>
+  </header>
+
+  <div style="display:flex;flex-direction:column;gap:12px">
+  <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px">
+  <nav data-noprint="1" style="display:flex;flex-wrap:wrap;gap:8px">
+    <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="5">
+      <button onClick="{{ tab.select }}" style="font-family:inherit;font-size:16px;font-weight:500;padding:8px 18px;border:1px solid oklch(0.34 0.06 190);background:{{ tab.bg }};color:{{ tab.fg }};cursor:pointer;display:flex;gap:8px;align-items:center;white-space:nowrap;flex:none">
+        <span>{{ tab.label }}</span>
+      </button>
+    </sc-for>
+    <select value="{{ siteSel }}" onChange="{{ pickSite }}" style="font-family:inherit;font-size:16px;font-weight:700;padding:8px 36px 8px 18px;border:1px solid oklch(0.34 0.06 190);background-color:{{ siteBg }};color:{{ siteFg }};cursor:pointer;appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 12px) 50%;background-size:6px 6px,6px 6px;background-repeat:no-repeat;outline:none">
+      <option value="" disabled="disabled" style="background:#fff;color:#8f9b97">站點</option>
+      <sc-for list="{{ siteOpts }}" as="o" hint-placeholder-count="6">
+        <option value="{{ o.v }}" style="background:#fff;color:#1b2422">{{ o.v }}</option>
+      </sc-for>
+    </select>
+  </nav>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+  <button data-noprint="1" onClick="{{ toggleKpi }}" style="font-family:inherit;font-size:16px;font-weight:500;padding:8px 18px;border:1px solid oklch(0.34 0.06 190);background:{{ kpiBtnBg }};color:{{ kpiBtnFg }};cursor:pointer;display:flex;gap:8px;align-items:center;white-space:nowrap;flex:none">
+    <span>ALL自動化機故KPI</span>
+  </button>
+  <button data-noprint="1" onClick="{{ toggleFail }}" style="font-family:inherit;font-size:16px;font-weight:500;padding:8px 18px;border:1px solid oklch(0.34 0.06 190);background:{{ failBtnBg }};color:{{ failBtnFg }};cursor:pointer;display:flex;gap:8px;align-items:center;white-space:nowrap;flex:none">
+    <span>機故分析</span>
+  </button>
+  <button data-noprint="1" onClick="{{ toggleImp }}" style="font-family:inherit;font-size:16px;font-weight:500;padding:8px 18px;border:1px solid oklch(0.34 0.06 190);background:{{ impBtnBg }};color:{{ impBtnFg }};cursor:pointer;display:flex;gap:8px;align-items:center;white-space:nowrap;flex:none">
+    <span>精進改善區</span>
+  </button>
+  <button data-noprint="1" onClick="{{ toggleProj }}" style="font-family:inherit;font-size:16px;font-weight:500;padding:8px 18px;border:1px solid oklch(0.34 0.06 190);background:{{ projBtnBg }};color:{{ projBtnFg }};cursor:pointer;display:flex;gap:8px;align-items:center;white-space:nowrap;flex:none">
+    <span>專案進度</span>
+  </button>
+  <button data-noprint="1" onClick="{{ toggleCrane }}" style="font-family:inherit;font-size:16px;font-weight:500;padding:8px 18px;border:1px solid oklch(0.34 0.06 190);background:{{ craneBtnBg }};color:{{ craneBtnFg }};cursor:pointer;display:flex;gap:8px;align-items:center;white-space:nowrap;flex:none">
+    <span>天車維修狀態</span>
+  </button>
+  <button data-noprint="1" onClick="{{ toggleMemo }}" style="font-family:inherit;font-size:16px;font-weight:500;padding:8px 18px;border:1px solid oklch(0.34 0.06 190);background:{{ memoBtnBg }};color:{{ memoBtnFg }};cursor:pointer;display:flex;gap:8px;align-items:center;white-space:nowrap;flex:none">
+    <span>備忘錄</span>
+    <sc-if value="{{ hasMemo }}" hint-placeholder-val="{{ false }}"><span style="width:8px;height:8px;border-radius:50%;background:oklch(0.78 0.15 75)"></span></sc-if>
+  </button>
+  </div>
+  </div>
+  <sc-if value="{{ kpiDetail }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:18px;background:#fff;border:1px solid #8f9b97;padding:20px 24px">
+      <button onClick="{{ kpiBack }}" style="align-self:flex-start;white-space:nowrap;font-family:inherit;font-size:15px;border:0;background:none;color:oklch(0.34 0.06 190);cursor:pointer;padding:0">← 返回</button>
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:14px 24px;border-bottom:2px solid #1b2422;padding-bottom:14px">
+        <h2 style="margin:0;font-size:34px;font-weight:900;letter-spacing:0.02em;color:#1b2422">{{ kpiB }}-自動化機故KPI</h2>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;font-size:15px;color:#3d4845">
+          <span style="display:flex;align-items:center;gap:4px;white-space:nowrap;flex:none">統計期間：第<input value="{{ kpiWeek }}" onChange="{{ setKpiWeek }}" placeholder="__" style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;width:34px;text-align:center;border:0;border-bottom:1px solid #8f9b97;background:transparent;outline:none;padding:2px 0">週</span>
+          <span style="display:flex;align-items:center;gap:6px;white-space:nowrap;flex:none"><span style="width:11px;height:11px;border-radius:50%;background:oklch(0.6 0.15 150)"></span>達標</span>
+          <span style="display:flex;align-items:center;gap:6px;white-space:nowrap;flex:none"><span style="width:11px;height:11px;border-radius:50%;background:oklch(0.55 0.19 25)"></span>未達標</span>
+          <span style="display:flex;align-items:center;gap:6px;white-space:nowrap;flex:none"><span style="width:11px;height:11px;border-radius:50%;background:#c3cac8"></span>未輸入</span>
+          <label data-noprint="1" style="white-space:nowrap;flex:none;font-size:15px;font-weight:700;padding:8px 18px;background:oklch(0.34 0.06 190);color:#fff;cursor:pointer;border:1px solid oklch(0.34 0.06 190)">↑ 匯入資料<input type="file" accept=".xlsx,.xls,.csv" onChange="{{ importKpi }}" style="display:none"></label>
+          <button data-noprint="1" onClick="{{ exportKpi }}" style="white-space:nowrap;flex:none;font-family:inherit;font-size:15px;font-weight:700;padding:8px 18px;background:#fff;color:oklch(0.34 0.06 190);cursor:pointer;border:1px solid oklch(0.34 0.06 190)">↓ 匯出資料</button>
+        </div>
+      </div>
+      <sc-if value="{{ kpiHasFile }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;font-size:14px;color:#5b6663">
+          <span>{{ kpiFile }}</span>
+          <button data-noprint="1" onClick="{{ clearKpi }}" style="font-family:inherit;font-size:13px;padding:3px 10px;border:1px solid #8f9b97;background:#fff;color:#1b2422;cursor:pointer">清除資料來源</button>
+        </div>
+      </sc-if>
+      <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 28px;background:oklch(0.3 0.05 190);border-top:5px solid oklch(0.64 0.16 45);color:#fff;padding:18px 24px">
+        <span style="font-size:16px;font-weight:700">KPI 目標</span>
+        <span style="font-size:30px;font-weight:900;letter-spacing:0.02em">各站機故 &lt; 135 次</span>
+        <span style="font-size:14px;color:#d6e2e0">每站每週計算</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:18px">
+        <div style="flex:2 1 420px;min-width:0;display:flex;flex-direction:column;gap:12px;border:2px solid oklch(0.55 0.19 25);padding:16px 22px 20px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:2px"><b style="font-size:17px;color:oklch(0.5 0.19 25)">未達標站點</b><span style="font-size:13px;color:#5b6663">本週機故次數（由高到低）</span></div>
+            <span style="font-size:15px;color:#1b2422">{{ kpiBadCount }}</span>
+          </div>
+          <sc-if value="{{ kpiNoData }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:center;justify-content:center;min-height:140px;border:1px dashed #c9d1ce;font-size:15px;color:#5b6663">尚未匯入本週 Excel 數據</div>
+          </sc-if>
+          <sc-if value="{{ kpiAllOk }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;justify-content:center;min-height:140px;border:1px dashed #c9d1ce;font-size:15px;color:oklch(0.45 0.12 150)">本週各站皆達標</div>
+          </sc-if>
+          <sc-if value="{{ kpiHasBad }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">
+              <sc-for list="{{ kpiBad }}" as="x" hint-placeholder-count="3">
+                <div style="display:flex;flex-direction:column;gap:6px;background:oklch(0.975 0.012 25);border:1px solid oklch(0.88 0.05 25);border-radius:6px;padding:10px 12px 9px">
+                  <div style="display:flex;align-items:center;gap:8px;min-width:0">
+                    <span style="flex:none;background:oklch(0.27 0.05 250);color:#fff;font-size:12px;font-weight:700;padding:2px 6px;border-radius:3px">{{ x.fl }}</span>
+                    <b style="font-size:15px;color:#1b2422;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ x.st }}</b>
+                  </div>
+                  <div style="display:flex;align-items:baseline;gap:5px">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:700;line-height:1.1;color:oklch(0.5 0.19 25)">{{ x.n }}</span>
+                    <span style="font-size:13px;color:#5b6663">次</span>
+                  </div>
+                  <div style="position:relative;height:10px;background:#ece6e5;border-radius:5px">
+                    <div style="height:100%;width:{{ x.w }};background:oklch(0.5 0.19 25);border-radius:5px"></div>
+                    <div style="position:absolute;top:-3px;bottom:-3px;left:{{ x.mk }};width:2px;background:#1b2422"></div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;gap:8px;font-size:12px">
+                    <span style="color:#5b6663">{{ x.goal }}</span>
+                    <b style="color:oklch(0.5 0.19 25)">{{ x.over }}</b>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+        <div style="flex:1 1 260px;display:flex;flex-direction:column;gap:14px;border:1px solid #d6dcda;border-top:5px solid oklch(0.3 0.05 190);padding:16px 22px 20px">
+          <div style="font-size:17px;font-weight:700;color:#1b2422">重大品質異常 <span style="font-weight:400;font-size:15px;color:#5b6663">件/週</span></div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:15px">本週<input value="{{ kpiQCur }}" onChange="{{ setKpiQCur }}" placeholder="–" style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:{{ kpiQCurFg }};width:56px;text-align:center;border:0;border-bottom:1px solid #8f9b97;background:transparent;outline:none">件</div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:15px">上週<input value="{{ kpiQPrev }}" onChange="{{ setKpiQPrev }}" placeholder="–" style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:{{ kpiQPrevFg }};width:56px;text-align:center;border:0;border-bottom:1px solid #8f9b97;background:transparent;outline:none">件</div>
+        </div>
+      </div>
+      <sc-for list="{{ kpiGroups }}" as="g" hint-placeholder-count="2">
+        <div style="overflow-x:auto">
+          <table style="border-collapse:collapse;min-width:820px;font-size:14px;border:1px solid #d6dcda">
+            <thead>
+              <tr style="background:oklch(0.3 0.05 190);color:#fff">
+                <th style="padding:9px 12px;text-align:left">樓層</th><th style="padding:9px 12px;text-align:left;min-width:110px">站點</th><th style="padding:9px 12px">機故目標</th><th style="padding:9px 12px">6週趨勢</th>
+                <sc-for list="{{ kpiHeadPrev }}" as="h" hint-placeholder-count="5"><th style="padding:9px 8px;white-space:nowrap">{{ h.t }}</th></sc-for>
+                <th style="padding:9px 8px;white-space:nowrap;color:oklch(0.82 0.12 50)">{{ kpiHeadCur }}</th><th style="padding:9px 12px">是否達標</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="5">
+                <tr style="border-top:{{ r.topB }}">
+                  <td style="padding:6px 12px;font-weight:700">{{ r.fl }}</td>
+                  <td style="padding:6px 12px">{{ r.st }}</td>
+                  <td style="padding:6px 12px;text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700">{{ r.T }}</td>
+                  <td style="padding:6px 12px">
+                    <sc-if value="{{ r.hasTrend }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:flex-end;gap:3px;height:22px;width:72px"><sc-for list="{{ r.bars }}" as="bar" hint-placeholder-count="6"><span style="flex:1;height:{{ bar.h }};background:{{ bar.c }}"></span></sc-for></div></sc-if>
+                    <sc-if value="{{ r.noTrend }}" hint-placeholder-val="{{ true }}"><div style="width:72px;border-top:1px dotted oklch(0.55 0.19 25)"></div></sc-if>
+                  </td>
+                  <sc-for list="{{ r.prev }}" as="c" hint-placeholder-count="5">
+                    <td style="padding:4px 4px;text-align:center"><input value="{{ c.v }}" onChange="{{ c.set }}" placeholder="–" inputMode="numeric" style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:{{ c.fg }};width:46px;text-align:center;border:1px solid transparent;background:transparent;outline:none;padding:3px 0" style-focus="border-color:#8f9b97;background:#fff"></td>
+                  </sc-for>
+                  <td style="padding:4px 4px;text-align:center;background:oklch(0.96 0.025 50)"><input value="{{ r.cur.v }}" onChange="{{ r.cur.set }}" placeholder="–" inputMode="numeric" style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:{{ r.cur.fg }};width:46px;text-align:center;border:1px solid transparent;background:transparent;outline:none;padding:3px 0" style-focus="border-color:#8f9b97;background:#fff"></td>
+                  <td style="padding:6px 12px"><span style="display:flex;align-items:center;gap:6px;white-space:nowrap;color:{{ r.stFg }}"><span style="width:10px;height:10px;border-radius:50%;background:{{ r.dot }}"></span>{{ r.status }}</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+  <sc-if value="{{ kpiList }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:16px;background:#fff;border:1px solid #8f9b97;padding:20px 24px">
+      <h2 style="margin:0;font-size:26px;font-weight:900;letter-spacing:0.04em;color:#1b2422;border-bottom:2px solid oklch(0.34 0.06 190);padding-bottom:14px">ALL自動化機故KPI</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:18px">
+        <sc-for list="{{ kpiCards }}" as="k" hint-placeholder-count="5">
+          <div onClick="{{ k.open }}" style="display:flex;flex-direction:column;background:#fff;border:1px solid #d6dcda;border-top:5px solid oklch(0.64 0.16 45);padding:20px 24px 16px;cursor:pointer" style-hover="border-color:#8f9b97;border-top-color:oklch(0.64 0.16 45);box-shadow:0 2px 8px rgba(0,0,0,0.08)">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+              <h3 style="margin:0;font-size:22px;font-weight:900;color:#1b2422">{{ k.id }}-自動化機故KPI</h3>
+              <span style="font-size:22px;color:#1b2422">→</span>
+            </div>
+            <p style="margin:12px 0 0;font-size:15px;color:#3d4845;text-wrap:pretty">各站每週機故次數、達標燈號、未達標站點與重大品質異常</p>
+            <div style="display:flex;flex-wrap:wrap;gap:6px 22px;border-top:1px solid #e3e8e6;margin-top:16px;padding-top:12px;font-size:14px;color:#5b6663">
+              <span>統計期間 <b style="color:#1b2422">{{ k.weekLabel }}</b></span>
+              <span>未達標 {{ k.badLabel }}</span>
+              <span>重大品質異常 {{ k.qLabel }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ ovOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:20px;background:#fff;border:1px solid #8f9b97;padding:20px 24px">
+      <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:28px;border-bottom:2px solid oklch(0.34 0.06 190);padding-bottom:14px">
+        <h2 style="margin:0;font-size:26px;font-weight:900;letter-spacing:0.04em;color:#1b2422">站點總數:{{ ovN }}</h2>
+        <div style="display:flex;align-items:center;gap:8px;font-size:18px"><span style="width:12px;height:12px;border-radius:50%;background:oklch(0.68 0.15 150)"></span><span>正常</span><b style="font-size:22px">{{ ovOk }}</b></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:18px"><span style="width:12px;height:12px;border-radius:50%;background:oklch(0.78 0.15 75)"></span><span>維修中</span><b style="font-size:22px">{{ ovFix }}</b></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:18px"><span style="width:12px;height:12px;border-radius:50%;background:oklch(0.6 0.19 25)"></span><span>停機</span><b style="font-size:22px">{{ ovDown }}</b></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:18px"><span>妥善率</span><b style="font-size:22px">{{ ovRate }}</b></div>
+      </div>
+      <div style="overflow-x:auto;border:1px solid #8f9b97">
+        <div style="min-width:720px;font-size:17px">
+          <div style="display:grid;grid-template-columns:120px repeat(5,minmax(0,1fr)) 120px;background:oklch(0.34 0.06 190);color:#fff;font-weight:500;letter-spacing:0.04em">
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">廠區</div>
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">樓層數</div>
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">站點數</div>
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">正常</div>
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">維修中</div>
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">停機</div>
+            <div style="padding:10px 0;text-align:center">妥善率</div>
+          </div>
+          <sc-for list="{{ ovRows }}" as="r" hint-placeholder-count="5">
+            <div onClick="{{ r.open }}" style="display:grid;grid-template-columns:120px repeat(5,minmax(0,1fr)) 120px;border-top:1px solid #8f9b97;cursor:pointer;min-height:48px" style-hover="background:oklch(0.97 0.012 190)">
+              <div style="display:flex;align-items:center;justify-content:center;background:oklch(0.95 0.018 190);color:oklch(0.34 0.06 190);font-weight:900;font-size:20px;border-right:1px solid #8f9b97">{{ r.id }}</div>
+              <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">{{ r.floors }}</div>
+              <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">{{ r.n }}</div>
+              <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">{{ r.ok }}</div>
+              <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">{{ r.fix }}</div>
+              <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">{{ r.down }}</div>
+              <div style="display:flex;align-items:center;justify-content:center;font-weight:700;color:{{ r.rateColor }}">{{ r.rate }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px"><span style="width:12px;height:12px;border-radius:50%;background:oklch(0.78 0.15 75)"></span><h3 style="margin:0;font-size:20px;font-weight:900;color:#1b2422">維修中細項</h3><span style="font-size:15px;color:#5b6663">{{ ovFix }} 個站點</span></div>
+        <sc-if value="{{ ovHasFix }}" hint-placeholder-val="{{ true }}">
+          <div style="overflow-x:auto;border:1px solid #8f9b97">
+            <div style="min-width:980px;font-size:16px">
+              <div style="display:grid;grid-template-columns:80px 70px 110px 170px 90px minmax(200px,1fr) 120px 120px 90px;background:oklch(0.34 0.06 190);color:#fff;font-weight:500;letter-spacing:0.04em">
+                <div style="padding:9px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">廠區</div>
+                <div style="padding:9px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">樓層</div>
+                <div style="padding:9px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">負責人</div>
+                <div style="padding:9px 14px;border-right:1px solid oklch(0.5 0.05 190)">站點</div>
+                <div style="padding:9px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">損壞數量</div>
+                <div style="padding:9px 14px;border-right:1px solid oklch(0.5 0.05 190)">硬體損壞內容</div>
+                <div style="padding:9px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">損壞日期</div>
+                <div style="padding:9px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">預計修復日期</div>
+                <div style="padding:9px 0;text-align:center">累積天數</div>
+              </div>
+              <sc-for list="{{ ovFixList }}" as="x" hint-placeholder-count="1">
+                <div onClick="{{ x.open }}" style="display:grid;grid-template-columns:80px 70px 110px 170px 90px minmax(200px,1fr) 120px 120px 90px;border-top:1px solid #8f9b97;min-height:44px;cursor:pointer;background:oklch(0.97 0.03 85)" style-hover="background:oklch(0.94 0.05 85)">
+                  <div style="display:flex;align-items:center;justify-content:center;font-weight:700;color:oklch(0.34 0.06 190);border-right:1px solid #8f9b97">{{ x.b }}</div>
+                  <div style="display:flex;align-items:center;justify-content:center;font-weight:700;border-right:1px solid #8f9b97">{{ x.f }}</div>
+                  <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">{{ x.owner }}</div>
+                  <div style="display:flex;align-items:center;padding:0 14px;font-weight:500;border-right:1px solid #8f9b97">{{ x.name }}</div>
+                  <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">{{ x.dmg }}</div>
+                  <div style="display:flex;align-items:center;padding:0 14px;border-right:1px solid #8f9b97">{{ x.content }}</div>
+                  <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">{{ x.date }}</div>
+                  <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">{{ x.eta }}</div>
+                  <div style="display:flex;align-items:center;justify-content:center;font-weight:700">{{ x.days }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ ovNoFix }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 16px;border:1px dashed #8f9b97;color:#5b6663;font-size:15px">目前沒有維修中的站點</div>
+        </sc-if>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:28px;border-top:1px solid #c9d1ce;padding-top:16px">
+        <h3 style="margin:0;font-size:20px;font-weight:900;color:#1b2422">天車總數:{{ carTotal }}</h3>
+        <div style="display:flex;align-items:center;gap:8px;font-size:17px"><span style="background:oklch(0.68 0.15 150);color:#fff;font-weight:700;padding:0 8px">V</span><span>正常</span><b style="font-size:20px">{{ carTotalOk }}</b></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:17px"><span style="background:oklch(0.6 0.19 25);color:#fff;font-weight:700;padding:0 8px">X</span><span>損壞</span><b style="font-size:20px;color:oklch(0.5 0.19 25)">{{ carTotalBad }}</b></div>
+        <button data-noprint="1" onClick="{{ openCrane }}" style="font-family:inherit;font-size:14px;padding:6px 12px;border:1px solid #8f9b97;background:#fff;color:#1b2422;cursor:pointer;white-space:nowrap" style-hover="background:#f3f5f4">查看天車維修狀態 →</button>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ craneOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:16px;background:#fff;border:1px solid #8f9b97;padding:20px 24px">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;border-bottom:2px solid oklch(0.34 0.06 190);padding-bottom:12px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <button data-noprint="1" onClick="{{ toggleCrane }}" style="font-family:inherit;font-size:14px;padding:6px 12px;border:1px solid #8f9b97;background:#fff;color:#1b2422;cursor:pointer;white-space:nowrap" style-hover="background:#f3f5f4">← 返回總表</button>
+          <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:20px">
+            <h2 style="margin:0;font-size:26px;font-weight:900;letter-spacing:0.04em;color:#1b2422">天車總數:{{ carTotal }}</h2>
+            <div style="display:flex;align-items:center;gap:8px;font-size:18px"><span style="background:oklch(0.68 0.15 150);color:#fff;font-weight:700;padding:0 8px">V</span><span>正常</span><b style="font-size:22px">{{ carTotalOk }}</b></div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:18px"><span style="background:oklch(0.6 0.19 25);color:#fff;font-weight:700;padding:0 8px">X</span><span>損壞</span><b style="font-size:22px;color:oklch(0.5 0.19 25)">{{ carTotalBad }}</b></div>
+          </div>
+        </div>
+        <span style="color:#5b6663;font-size:15px">{{ craneSummary }}</span>
+      </div>
+      <div data-noprint="1" style="display:flex;flex-wrap:wrap;gap:8px">
+        <sc-for list="{{ carTabs }}" as="ct" hint-placeholder-count="1">
+          <button onClick="{{ ct.select }}" style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:500;padding:8px 18px;border:1px solid oklch(0.34 0.06 190);background:{{ ct.bg }};color:{{ ct.fg }};cursor:pointer;white-space:nowrap;flex:none">{{ ct.label }}</button>
+        </sc-for>
+      </div>
+      <sc-for list="{{ carShown }}" as="blk" hint-placeholder-count="1">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px">
+            <div style="font-size:18px;font-weight:700">{{ blk.countLabel }}</div>
+            <div style="display:flex;align-items:center;gap:16px;font-size:14px;color:#5b6663">
+              <span style="display:flex;align-items:center;gap:6px"><span style="background:oklch(0.68 0.15 150);color:#fff;font-weight:700;padding:0 6px">V</span>正常 <b style="color:#1b2422">{{ blk.used }}</b></span>
+              <span style="display:flex;align-items:center;gap:6px"><span style="background:oklch(0.6 0.19 25);color:#fff;font-weight:700;padding:0 6px">X</span>損壞 <b style="color:#1b2422">{{ blk.unused }}</b></span>
+              <span data-noprint="1">車號可直接輸入</span>
+            </div>
+          </div>
+          <div style="overflow-x:auto;overflow-y:hidden">
+            <div style="min-width:1000px;border-top:1px solid #1b2422;border-left:1px solid #1b2422;font-size:16px">
+              <sc-for list="{{ blk.rows }}" as="row" hint-placeholder-count="2">
+                <div style="display:grid;grid-template-columns:110px repeat(16,minmax(0,1fr))">
+                  <div style="padding:6px 0;text-align:center;font-weight:700;background:oklch(0.95 0.018 190);color:oklch(0.34 0.06 190);border-right:1px solid #1b2422;border-bottom:1px solid #1b2422">車號</div>
+                  <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="16">
+                    <div style="display:flex;border-right:1px solid #1b2422;border-bottom:1px solid #1b2422">
+                      <input value="{{ cell.no }}" onChange="{{ cell.setNo }}" title="車號" style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:500;text-align:center;border:0;outline:none;background:transparent;color:#1b2422;width:100%;min-width:0;padding:6px 0" style-focus="background:oklch(0.95 0.018 190)">
+                    </div>
+                  </sc-for>
+                  <div style="padding:6px 0;text-align:center;font-weight:700;background:oklch(0.95 0.018 190);color:oklch(0.34 0.06 190);border-right:1px solid #1b2422;border-bottom:1px solid #1b2422">使用狀態</div>
+                  <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="16">
+                    <button onClick="{{ cell.toggle }}" title="點擊切換 V / X" style="font-family:inherit;font-size:16px;font-weight:700;padding:6px 0;min-height:33px;border:0;border-right:1px solid #1b2422;border-bottom:1px solid #1b2422;background:{{ cell.bg }};color:{{ cell.fg }};cursor:{{ cell.cursor }}">{{ cell.mark }}</button>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+      <div style="display:none">
+        <div>
+          <div style="display:grid;grid-template-columns:70px 60px 170px 64px minmax(200px,1fr) 130px 130px 90px;background:oklch(0.95 0.018 190);color:oklch(0.34 0.06 190);font-weight:700">
+            <div style="padding:8px 0;text-align:center;border-right:1px solid #8f9b97">廠區</div>
+            <div style="padding:8px 0;text-align:center;border-right:1px solid #8f9b97">樓層</div>
+            <div style="padding:8px 12px;border-right:1px solid #8f9b97">站點</div>
+            <div style="padding:8px 0;text-align:center;border-right:1px solid #8f9b97">燈號</div>
+            <div style="padding:8px 12px;border-right:1px solid #8f9b97">損壞內容</div>
+            <div style="padding:8px 0;text-align:center;border-right:1px solid #8f9b97">損壞日期</div>
+            <div style="padding:8px 0;text-align:center;border-right:1px solid #8f9b97">預計修復日期</div>
+            <div style="padding:8px 0;text-align:center">累積天數</div>
+          </div>
+          <sc-for list="{{ cranes }}" as="c" hint-placeholder-count="6">
+            <div style="display:grid;grid-template-columns:70px 60px 170px 64px minmax(200px,1fr) 130px 130px 90px;min-height:38px;border-top:1px solid #a9b3b0;background:{{ c.rowBg }}">
+              <div style="display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-weight:500;border-right:1px solid #8f9b97">{{ c.b }}</div>
+              <div style="display:flex;align-items:center;justify-content:center;font-weight:700;color:oklch(0.34 0.06 190);border-right:1px solid #8f9b97">{{ c.f }}</div>
+              <div style="padding:0 12px;display:flex;align-items:center;gap:6px;font-weight:500;border-right:1px solid #8f9b97"><span>{{ c.name }}</span><span style="color:oklch(0.45 0.07 190);font-weight:400">天車</span></div>
+              <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">
+                <button onClick="{{ c.cycle }}" title="{{ c.lightLabel }}" style="width:28px;height:28px;border:0;padding:0;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center"><span style="width:14px;height:14px;border-radius:50%;background:{{ c.lightColor }};box-shadow:0 0 0 4px {{ c.lightHalo }}"></span></button>
+              </div>
+              <div style="padding:0 12px;display:flex;align-items:center;border-right:1px solid #8f9b97">
+                <input value="{{ c.content }}" onChange="{{ c.setContent }}" title="損壞內容" style="font-family:inherit;font-size:15px;border:0;outline:none;background:transparent;color:#1b2422;width:100%;padding:6px 0">
+              </div>
+              <div style="display:flex;align-items:center;border-right:1px solid #8f9b97">
+                <input type="date" value="{{ c.date }}" onChange="{{ c.setDate }}" title="損壞日期" style="font-family:inherit;font-size:14px;border:0;outline:none;background:transparent;color:#1b2422;width:100%;padding:0 8px;box-sizing:border-box">
+              </div>
+              <div style="display:flex;align-items:center;border-right:1px solid #8f9b97">
+                <input type="date" value="{{ c.eta }}" onChange="{{ c.setEta }}" title="預計修復日期" style="font-family:inherit;font-size:14px;border:0;outline:none;background:transparent;color:#1b2422;width:100%;padding:0 8px;box-sizing:border-box">
+              </div>
+              <div style="display:flex;align-items:baseline;justify-content:center;align-self:center;gap:4px"><span style="font-weight:700;font-size:17px">{{ c.days }}</span><span style="font-size:13px;color:#5b6663">{{ c.daysUnit }}</span></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ failOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:16px;background:#fff;border:1px solid #8f9b97;padding:20px 24px">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;border-bottom:2px solid oklch(0.34 0.06 190);padding-bottom:12px">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <button data-noprint="1" onClick="{{ closeImp }}" style="font-family:inherit;font-size:14px;padding:6px 12px;border:1px solid #8f9b97;background:#fff;color:#1b2422;cursor:pointer;white-space:nowrap" style-hover="background:#f3f5f4">← 返回總表</button>
+          <h2 style="margin:0;font-size:26px;font-weight:900;letter-spacing:0.04em;color:#1b2422">每週機故TOP3分析</h2>
+          <span style="color:#5b6663;font-size:15px">{{ failInfo }}</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <label data-noprint="1" style="font-family:inherit;font-size:15px;font-weight:500;padding:7px 16px;border:1px solid oklch(0.34 0.06 190);background:oklch(0.34 0.06 190);color:#fff;cursor:pointer;white-space:nowrap" style-hover="background:oklch(0.28 0.06 190)">
+          匯入Excel檔
+          <input type="file" accept=".xlsx,.xls,.csv" onChange="{{ importFail }}" style="display:none">
+        </label>
+        <sc-if value="{{ failHasData }}" hint-placeholder-val="{{ false }}">
+          <button data-noprint="1" onClick="{{ clearFail }}" style="font-family:inherit;font-size:15px;font-weight:500;padding:7px 16px;border:1px solid oklch(0.6 0.19 25);background:#fff;color:oklch(0.5 0.19 25);cursor:pointer;white-space:nowrap" style-hover="background:oklch(0.96 0.03 25)">清除資料來源</button>
+        </sc-if>
+        </div>
+      </div>
+      <sc-if value="{{ failHasData }}" hint-placeholder-val="{{ false }}">
+        <div data-noprint="1" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;font-size:15px;color:#1b2422">
+          <label style="display:flex;align-items:center;gap:8px">統計欄位
+            <select value="{{ failCol }}" onChange="{{ setFailCol }}" style="font-family:inherit;font-size:15px;padding:5px 8px;border:1px solid #8f9b97;background:#fff;color:#1b2422">
+              <sc-for list="{{ failColOpts }}" as="colOpt" hint-placeholder-count="1"><option value="{{ colOpt.v }}">{{ colOpt.t }}</option></sc-for>
+            </select>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px">次數欄位
+            <select value="{{ failCnt }}" onChange="{{ setFailCnt }}" style="font-family:inherit;font-size:15px;padding:5px 8px;border:1px solid #8f9b97;background:#fff;color:#1b2422">
+              <sc-for list="{{ failCntOpts }}" as="cntOpt" hint-placeholder-count="1"><option value="{{ cntOpt.v }}">{{ cntOpt.t }}</option></sc-for>
+            </select>
+          </label>
+        </div>
+      </sc-if>
+      <sc-if value="{{ failHasDate }}" hint-placeholder-val="{{ false }}">
+        <div data-noprint="1" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:15px;color:#1b2422">
+          <span>分析期間（{{ failDateCol }}）</span>
+          <input type="date" value="{{ failFrom }}" onChange="{{ setFailFrom }}" style="font-family:inherit;font-size:15px;padding:4px 8px;border:1px solid #8f9b97;background:#fff;color:#1b2422">
+          <span>~</span>
+          <input type="date" value="{{ failTo }}" onChange="{{ setFailTo }}" style="font-family:inherit;font-size:15px;padding:4px 8px;border:1px solid #8f9b97;background:#fff;color:#1b2422">
+          <button onClick="{{ failAllDates }}" style="font-family:inherit;font-size:14px;padding:5px 10px;border:1px solid #8f9b97;background:#fff;color:#1b2422;cursor:pointer" style-hover="background:#f3f5f4">全部期間</button>
+          <span style="color:#5b6663">{{ failPeriod }}</span>
+        </div>
+      </sc-if>
+      <sc-if value="{{ failHasEq }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:130px minmax(0,1fr) 150px;border:1px solid #8f9b97">
+          <div style="display:flex;align-items:center;justify-content:center;background:oklch(0.95 0.018 190);color:oklch(0.34 0.06 190);font-weight:700;font-size:17px;border-right:1px solid #8f9b97;padding:10px 0">機台</div>
+          <div style="display:flex;align-items:center;padding:10px 14px;font-size:20px;font-weight:900;letter-spacing:0.02em;color:#1b2422">{{ failEq }}</div>
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-left:1px solid #c9d1ce;padding:6px 0">
+            <span style="font-size:12px;color:#5b6663">總體機故次數</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;color:#1b2422">{{ failTotalLabel }}</span>
+          </div>
+        </div>
+      </sc-if>
+      <div style="display:grid;grid-template-columns:130px minmax(0,1fr);border:1px solid #8f9b97">
+        <div style="display:flex;align-items:center;justify-content:center;background:oklch(0.34 0.06 190);color:#fff;font-weight:700;font-size:17px;letter-spacing:0.04em">機故排行</div>
+        <div style="display:flex;flex-direction:column">
+          <sc-for list="{{ failTop }}" as="t" hint-placeholder-count="3">
+            <div style="display:grid;grid-template-columns:90px minmax(0,1fr) 110px 150px;align-items:center;min-height:52px;border-top:{{ t.border }}">
+              <div style="display:flex;justify-content:center"><span style="background:{{ t.badge }};color:#fff;font-weight:900;font-size:16px;padding:4px 12px;letter-spacing:0.04em">{{ t.rank }}</span></div>
+              <div style="display:flex;flex-direction:column;gap:6px;padding:8px 14px">
+                <span style="font-size:18px;font-weight:700;color:#1b2422">{{ t.name }}</span>
+                <div style="height:6px;background:#e3e8e6"><div style="height:6px;width:{{ t.w }};background:{{ t.badge }}"></div></div>
+              </div>
+              <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:500;color:#1b2422">{{ t.n }}</div>
+              <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;align-self:stretch;border-left:1px solid #c9d1ce">
+                <span style="font-size:12px;color:#5b6663">整體機故占比</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;color:{{ t.pctColor }}">{{ t.pct }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <sc-for list="{{ failBlocks }}" as="fb" hint-placeholder-count="3">
+      <div style="display:grid;grid-template-columns:130px minmax(0,1fr);border:1px solid #8f9b97">
+        <div style="display:flex;align-items:center;justify-content:center;background:{{ fb.badge }};color:#fff;font-weight:900;font-size:17px;letter-spacing:0.04em;border-right:1px solid #8f9b97;padding:12px 0">{{ fb.rank }}</div>
+        <div style="display:flex;align-items:center;padding:12px 14px;font-size:18px;font-weight:700;color:#1b2422">{{ fb.name }}</div>
+        <div style="display:flex;align-items:center;justify-content:center;background:oklch(0.95 0.018 190);color:oklch(0.34 0.06 190);font-weight:700;font-size:17px;border-right:1px solid #8f9b97;border-top:1px solid #8f9b97">分析原因</div>
+        <textarea value="{{ fb.reason }}" onChange="{{ fb.setReason }}" rows="{{ fb.reasonRows }}" placeholder="輸入分析原因…" style="font-family:inherit;font-size:16px;line-height:1.6;border:0;border-top:1px solid #8f9b97;outline:none;resize:none;overflow:hidden;background:transparent;color:#1b2422;width:100%;padding:12px 14px;box-sizing:border-box;display:block" style-focus="background:#fff;box-shadow:inset 0 0 0 2px oklch(0.45 0.07 190)"></textarea>
+        <div style="display:flex;align-items:center;justify-content:center;background:oklch(0.95 0.018 190);color:oklch(0.34 0.06 190);font-weight:700;font-size:17px;border-right:1px solid #8f9b97;border-top:1px solid #8f9b97">解決方式</div>
+        <textarea value="{{ fb.solution }}" onChange="{{ fb.setSolution }}" rows="{{ fb.solutionRows }}" placeholder="輸入解決方式…" style="font-family:inherit;font-size:16px;line-height:1.6;border:0;border-top:1px solid #8f9b97;outline:none;resize:none;overflow:hidden;background:transparent;color:#1b2422;width:100%;padding:12px 14px;box-sizing:border-box;display:block" style-focus="background:#fff;box-shadow:inset 0 0 0 2px oklch(0.45 0.07 190)"></textarea>
+      </div>
+      </sc-for>
+    </div>
+  </sc-if>
+  <sc-if value="{{ impOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:16px;background:#fff;border:1px solid #8f9b97;padding:20px 24px">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;border-bottom:2px solid oklch(0.34 0.06 190);padding-bottom:12px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <button data-noprint="1" onClick="{{ closeImp }}" style="font-family:inherit;font-size:14px;padding:6px 12px;border:1px solid #8f9b97;background:#fff;color:#1b2422;cursor:pointer;white-space:nowrap" style-hover="background:#f3f5f4">← 返回總表</button>
+          <h2 style="margin:0;font-size:26px;font-weight:900;letter-spacing:0.04em;color:#1b2422">{{ impTitle }}</h2>
+          <span style="color:#5b6663;font-size:15px">{{ impSummary }}</span>
+        </div>
+        <button data-noprint="1" onClick="{{ addImp }}" style="font-family:inherit;font-size:15px;font-weight:500;padding:7px 16px;border:1px solid oklch(0.34 0.06 190);background:oklch(0.34 0.06 190);color:#fff;cursor:pointer;white-space:nowrap" style-hover="background:oklch(0.28 0.06 190)">{{ impAddLabel }}</button>
+      </div>
+      <sc-if value="{{ isProj }}" hint-placeholder-val="{{ false }}">
+      </sc-if>
+      <sc-if value="{{ showSum }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <h3 style="margin:0;font-size:20px;font-weight:900;color:#1b2422">{{ sumTitle }}</h3>
+          <div style="overflow-x:auto;border:1px solid #8f9b97">
+            <div style="min-width:900px;font-size:16px">
+              <div style="display:grid;grid-template-columns:70px 90px 80px 140px minmax(220px,1fr) 120px 120px;background:oklch(0.34 0.06 190);color:#fff;font-weight:500;letter-spacing:0.04em">
+                <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">項目</div>
+                <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">廠區</div>
+                <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">樓層</div>
+                <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">站點</div>
+                <div style="padding:10px 14px;border-right:1px solid oklch(0.5 0.05 190)">{{ issueLabel }}</div>
+                <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">負責人</div>
+                <div style="padding:10px 0;text-align:center">進度</div>
+              </div>
+              <sc-for list="{{ imps }}" as="r" hint-placeholder-count="1">
+                <div style="display:grid;grid-template-columns:70px 90px 80px 140px minmax(220px,1fr) 120px 120px;border-top:1px solid #8f9b97;min-height:42px;background:{{ r.itemBg }}">
+                  <div style="display:flex;align-items:center;justify-content:center;font-weight:700;color:oklch(0.34 0.06 190);border-right:1px solid #8f9b97">{{ r.no }}</div>
+                  <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">{{ r.b }}</div>
+                  <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">{{ r.fl }}</div>
+                  <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">{{ r.st }}</div>
+                  <div style="display:flex;align-items:center;padding:6px 14px;border-right:1px solid #8f9b97"><a href="#" onClick="{{ r.jump }}" title="進入明細" style="font-weight:500;color:oklch(0.34 0.06 190);text-decoration:underline;text-underline-offset:3px;white-space:pre-line;cursor:pointer" style-hover="color:oklch(0.25 0.06 190)">{{ r.issueLink }}</a></div>
+                  <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">{{ r.owner }}</div>
+                  <div style="display:flex;align-items:center;justify-content:center;padding:6px"><span style="background:{{ r.statusBg }};color:#fff;font-size:14px;font-weight:700;padding:4px 0;width:100%;text-align:center">{{ r.status }}</span></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ showDetail }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:14px">
+          <button data-noprint="1" onClick="{{ showProjSum }}" style="font-family:inherit;font-size:14px;padding:6px 12px;border:1px solid #8f9b97;background:#fff;color:#1b2422;cursor:pointer;white-space:nowrap" style-hover="background:#f3f5f4">{{ backSumLabel }}</button>
+          <h3 style="margin:0;font-size:20px;font-weight:900;color:#1b2422">{{ detTitle }}</h3>
+        </div>
+      <div style="overflow-x:auto;border:1px solid #8f9b97">
+        <div style="min-width:1000px;font-size:16px">
+          <div style="display:grid;grid-template-columns:130px 100px 80px minmax(120px,1fr) 120px 160px 160px 120px 64px;background:oklch(0.34 0.06 190);color:#fff;font-weight:500;letter-spacing:0.04em">
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">項目</div>
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">廠區</div>
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">樓層</div>
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">站點</div>
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">負責人</div>
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">開始日期</div>
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">預計完成日期</div>
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">進度</div>
+            <div data-noprint="1" style="padding:10px 0;text-align:center">刪除</div>
+          </div>
+          <sc-for list="{{ imps }}" as="r" hint-placeholder-count="1">
+            <div id="{{ r.anchor }}" style="border-top:2px solid oklch(0.34 0.06 190);background:{{ r.itemBg }}">
+            <div style="display:grid;grid-template-columns:130px 100px 80px minmax(120px,1fr) 120px 160px 160px 120px 64px;min-height:46px">
+              <div style="display:flex;align-items:center;justify-content:center;font-weight:700;color:oklch(0.34 0.06 190);border-right:1px solid #8f9b97">{{ r.no }}</div>
+              <div style="display:flex;border-right:1px solid #8f9b97"><select value="{{ r.b }}" onChange="{{ r.setB }}" style="font-family:inherit;font-size:15px;border:0;outline:none;background:transparent;color:#1b2422;width:100%;text-align:center;text-align-last:center;cursor:pointer"><option value=""></option><option value="K11">K11</option><option value="K18">K18</option><option value="K21">K21</option><option value="K22">K22</option><option value="K25">K25</option></select></div>
+              <div style="display:flex;border-right:1px solid #8f9b97"><input type="text" value="{{ r.fl }}" onChange="{{ r.setFl }}" placeholder="" style="font-family:inherit;font-size:15px;border:0;outline:none;background:transparent;color:#1b2422;width:100%;padding:6px 8px;box-sizing:border-box;text-align:center" style-focus="background:#fff;box-shadow:inset 0 0 0 2px oklch(0.45 0.07 190)"></div>
+              <div style="display:flex;border-right:1px solid #8f9b97"><input type="text" value="{{ r.st }}" onChange="{{ r.setSt }}" style="font-family:inherit;font-size:15px;border:0;outline:none;background:transparent;color:#1b2422;width:100%;padding:6px 8px;box-sizing:border-box;text-align:center" style-focus="background:#fff;box-shadow:inset 0 0 0 2px oklch(0.45 0.07 190)"></div>
+              <div style="display:flex;border-right:1px solid #8f9b97"><input type="text" value="{{ r.owner }}" onChange="{{ r.setOwner }}" style="font-family:inherit;font-size:15px;border:0;outline:none;background:transparent;color:#1b2422;width:100%;padding:6px 8px;box-sizing:border-box;text-align:center" style-focus="background:#fff;box-shadow:inset 0 0 0 2px oklch(0.45 0.07 190)"></div>
+              <div style="display:flex;border-right:1px solid #8f9b97"><input type="date" value="{{ r.start }}" onChange="{{ r.setStart }}" style="font-family:inherit;font-size:15px;border:0;outline:none;background:transparent;color:#1b2422;width:100%;padding:6px 8px;box-sizing:border-box;cursor:pointer"></div>
+              <div style="display:flex;border-right:1px solid #8f9b97"><input type="date" value="{{ r.eta }}" onChange="{{ r.setEta }}" style="font-family:inherit;font-size:15px;border:0;outline:none;background:transparent;color:#1b2422;width:100%;padding:6px 8px;box-sizing:border-box;cursor:pointer"></div>
+              <div style="display:flex;align-items:center;justify-content:center;padding:6px;border-right:1px solid #8f9b97"><select value="{{ r.status }}" onChange="{{ r.setStatus }}" style="font-family:inherit;font-size:14px;font-weight:700;border:0;outline:none;background:{{ r.statusBg }};color:#fff;width:100%;padding:5px 4px;text-align:center;text-align-last:center;cursor:pointer;appearance:none"><option value="規劃中">規劃中</option><option value="進行中">進行中</option><option value="已完成">已完成</option></select></div>
+              <div data-noprint="1" style="display:flex;align-items:center;justify-content:center"><button onClick="{{ r.del }}" title="刪除此列" style="font-family:inherit;font-size:16px;border:1px solid #c9d1ce;background:#fff;color:#5b6663;width:30px;height:30px;cursor:pointer" style-hover="border-color:oklch(0.6 0.19 25);color:oklch(0.5 0.19 25)">×</button></div>
+            </div>
+            <div style="display:grid;grid-template-columns:130px minmax(0,1fr);border-top:1px solid #8f9b97">
+              <div style="display:flex;align-items:center;justify-content:center;background:{{ r.labelBg }};color:oklch(0.34 0.06 190);font-weight:700;border-right:1px solid #8f9b97;padding:8px 0">{{ issueLabel }}</div>
+              <textarea value="{{ r.issue }}" onChange="{{ r.setIssue }}" rows="{{ r.issueRows }}" style="font-family:inherit;font-size:15px;line-height:1.5;border:0;outline:none;resize:none;overflow:hidden;background:transparent;color:#1b2422;width:100%;padding:10px 14px;box-sizing:border-box;display:block" style-focus="background:#fff;box-shadow:inset 0 0 0 2px oklch(0.45 0.07 190)"></textarea>
+            </div>
+            <sc-if value="{{ isProj }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:130px minmax(0,1fr);border-top:1px solid #8f9b97">
+              <div style="display:flex;align-items:center;justify-content:center;background:{{ r.labelBg }};color:oklch(0.34 0.06 190);font-weight:700;border-right:1px solid #8f9b97;padding:8px 0">導入事由</div>
+              <textarea value="{{ r.reason }}" onChange="{{ r.setReason }}" rows="{{ r.reasonRows }}" style="font-family:inherit;font-size:15px;line-height:1.5;border:0;outline:none;resize:none;overflow:hidden;background:transparent;color:#1b2422;width:100%;padding:10px 14px;box-sizing:border-box;display:block" style-focus="background:#fff;box-shadow:inset 0 0 0 2px oklch(0.45 0.07 190)"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:130px minmax(0,1fr);border-top:1px solid #8f9b97">
+              <div style="display:flex;align-items:center;justify-content:center;background:{{ r.labelBg }};color:oklch(0.34 0.06 190);font-weight:700;border-right:1px solid #8f9b97;padding:8px 0">評估內容</div>
+              <textarea value="{{ r.eval }}" onChange="{{ r.setEval }}" rows="{{ r.evalRows }}" style="font-family:inherit;font-size:15px;line-height:1.5;border:0;outline:none;resize:none;overflow:hidden;background:transparent;color:#1b2422;width:100%;padding:10px 14px;box-sizing:border-box;display:block" style-focus="background:#fff;box-shadow:inset 0 0 0 2px oklch(0.45 0.07 190)"></textarea>
+            </div>
+            </sc-if>
+            <div style="display:grid;grid-template-columns:130px minmax(0,1fr);border-top:1px solid #8f9b97">
+              <div style="display:flex;align-items:center;justify-content:center;background:{{ r.labelBg }};color:oklch(0.34 0.06 190);font-weight:700;border-right:1px solid #8f9b97;padding:8px 0">改善方式/對策</div>
+              <textarea value="{{ r.fix }}" onChange="{{ r.setFix }}" rows="{{ r.fixRows }}" style="font-family:inherit;font-size:15px;line-height:1.5;border:0;outline:none;resize:none;overflow:hidden;background:transparent;color:#1b2422;width:100%;padding:10px 14px;box-sizing:border-box;display:block" style-focus="background:#fff;box-shadow:inset 0 0 0 2px oklch(0.45 0.07 190)"></textarea>
+            </div>
+            <sc-if value="{{ isImp }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:130px minmax(0,1fr);border-top:1px solid #8f9b97">
+              <div style="display:flex;align-items:center;justify-content:center;background:{{ r.labelBg }};color:oklch(0.34 0.06 190);font-weight:700;border-right:1px solid #8f9b97;padding:8px 0">AS IS圖</div>
+              <div style="display:flex;flex-wrap:wrap;gap:10px;padding:10px 14px;align-items:flex-start">
+                <sc-for list="{{ r.asis }}" as="im" hint-placeholder-count="0">
+                  <div style="position:relative;border:1px solid #c9d1ce;background:#fff;padding:4px">
+                    <div role="img" aria-label="AS IS圖" onClick="{{ im.view }}" style="display:block;height:160px;width:{{ im.w }}px;background-image:{{ im.bg }};background-size:contain;background-position:center;background-repeat:no-repeat;cursor:zoom-in"></div>
+                    <button data-noprint="1" onClick="{{ im.del }}" title="移除圖片" style="position:absolute;top:4px;right:4px;width:26px;height:26px;border:1px solid #c9d1ce;background:#fff;color:#5b6663;font-size:15px;cursor:pointer;line-height:1" style-hover="border-color:oklch(0.6 0.19 25);color:oklch(0.5 0.19 25)">×</button>
+                  </div>
+                </sc-for>
+                <label data-noprint="1" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:150px;height:170px;border:1px dashed #8f9b97;color:oklch(0.34 0.06 190);font-size:15px;cursor:pointer;box-sizing:border-box;background:transparent" style-hover="background:oklch(0.95 0.018 190)">
+                  <span style="font-size:26px;line-height:1">＋</span><span>上傳AS IS圖</span>
+                  <input type="file" accept="image/*" multiple="multiple" onChange="{{ r.addAsis }}" style="display:none">
+                </label>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:130px minmax(0,1fr);border-top:1px solid #8f9b97">
+              <div style="display:flex;align-items:center;justify-content:center;background:{{ r.labelBg }};color:oklch(0.34 0.06 190);font-weight:700;border-right:1px solid #8f9b97;padding:8px 0">TO BE圖</div>
+              <div style="display:flex;flex-wrap:wrap;gap:10px;padding:10px 14px;align-items:flex-start">
+                <sc-for list="{{ r.tobe }}" as="im" hint-placeholder-count="0">
+                  <div style="position:relative;border:1px solid #c9d1ce;background:#fff;padding:4px">
+                    <div role="img" aria-label="TO BE圖" onClick="{{ im.view }}" style="display:block;height:160px;width:{{ im.w }}px;background-image:{{ im.bg }};background-size:contain;background-position:center;background-repeat:no-repeat;cursor:zoom-in"></div>
+                    <button data-noprint="1" onClick="{{ im.del }}" title="移除圖片" style="position:absolute;top:4px;right:4px;width:26px;height:26px;border:1px solid #c9d1ce;background:#fff;color:#5b6663;font-size:15px;cursor:pointer;line-height:1" style-hover="border-color:oklch(0.6 0.19 25);color:oklch(0.5 0.19 25)">×</button>
+                  </div>
+                </sc-for>
+                <label data-noprint="1" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:150px;height:170px;border:1px dashed #8f9b97;color:oklch(0.34 0.06 190);font-size:15px;cursor:pointer;box-sizing:border-box;background:transparent" style-hover="background:oklch(0.95 0.018 190)">
+                  <span style="font-size:26px;line-height:1">＋</span><span>上傳TO BE圖</span>
+                  <input type="file" accept="image/*" multiple="multiple" onChange="{{ r.addTobe }}" style="display:none">
+                </label>
+              </div>
+            </div>
+            </sc-if>
+            <sc-if value="{{ isProj }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:130px minmax(0,1fr);border-top:1px solid #8f9b97">
+              <div style="display:flex;align-items:center;justify-content:center;background:{{ r.labelBg }};color:oklch(0.34 0.06 190);font-weight:700;border-right:1px solid #8f9b97;padding:8px 0">機台圖片</div>
+              <div style="display:flex;flex-wrap:wrap;gap:10px;padding:10px 14px;align-items:flex-start">
+                <sc-for list="{{ r.imgs }}" as="im" hint-placeholder-count="0">
+                  <div style="position:relative;border:1px solid #c9d1ce;background:#fff;padding:4px">
+                    <div role="img" aria-label="上傳圖片" onClick="{{ im.view }}" style="display:block;height:160px;width:{{ im.w }}px;background-image:{{ im.bg }};background-size:contain;background-position:center;background-repeat:no-repeat;cursor:zoom-in"></div>
+                    <button data-noprint="1" onClick="{{ im.del }}" title="移除圖片" style="position:absolute;top:4px;right:4px;width:26px;height:26px;border:1px solid #c9d1ce;background:#fff;color:#5b6663;font-size:15px;cursor:pointer;line-height:1" style-hover="border-color:oklch(0.6 0.19 25);color:oklch(0.5 0.19 25)">×</button>
+                  </div>
+                </sc-for>
+                <label data-noprint="1" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:150px;height:170px;border:1px dashed #8f9b97;color:oklch(0.34 0.06 190);font-size:15px;cursor:pointer;box-sizing:border-box;background:transparent" style-hover="background:oklch(0.95 0.018 190)">
+                  <span style="font-size:26px;line-height:1">＋</span><span>上傳機台圖片</span>
+                  <input type="file" accept="image/*" multiple="multiple" onChange="{{ r.addImgs }}" style="display:none">
+                </label>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:130px minmax(0,1fr);border-top:1px solid #8f9b97">
+              <div style="display:flex;align-items:center;justify-content:center;background:{{ r.labelBg }};color:oklch(0.34 0.06 190);font-weight:700;border-right:1px solid #8f9b97;padding:8px 0">Layout圖</div>
+              <div style="display:flex;flex-wrap:wrap;gap:10px;padding:10px 14px;align-items:flex-start">
+                <sc-for list="{{ r.layouts }}" as="im" hint-placeholder-count="0">
+                  <div style="position:relative;border:1px solid #c9d1ce;background:#fff;padding:4px">
+                    <div role="img" aria-label="Layout圖" onClick="{{ im.view }}" style="display:block;height:160px;width:{{ im.w }}px;background-image:{{ im.bg }};background-size:contain;background-position:center;background-repeat:no-repeat;cursor:zoom-in"></div>
+                    <button data-noprint="1" onClick="{{ im.del }}" title="移除圖片" style="position:absolute;top:4px;right:4px;width:26px;height:26px;border:1px solid #c9d1ce;background:#fff;color:#5b6663;font-size:15px;cursor:pointer;line-height:1" style-hover="border-color:oklch(0.6 0.19 25);color:oklch(0.5 0.19 25)">×</button>
+                  </div>
+                </sc-for>
+                <label data-noprint="1" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:150px;height:170px;border:1px dashed #8f9b97;color:oklch(0.34 0.06 190);font-size:15px;cursor:pointer;box-sizing:border-box;background:transparent" style-hover="background:oklch(0.95 0.018 190)">
+                  <span style="font-size:26px;line-height:1">＋</span><span>上傳Layout圖</span>
+                  <input type="file" accept="image/*" multiple="multiple" onChange="{{ r.addLayouts }}" style="display:none">
+                </label>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:130px minmax(0,1fr);border-top:1px solid #8f9b97">
+              <div style="display:flex;align-items:center;justify-content:center;text-align:center;background:{{ r.labelBg }};color:oklch(0.34 0.06 190);font-weight:700;border-right:1px solid #8f9b97;padding:8px 10px;line-height:1.4">預計修改機構模擬圖</div>
+              <div style="display:flex;flex-wrap:wrap;gap:10px;padding:10px 14px;align-items:flex-start">
+                <sc-for list="{{ r.sims }}" as="im" hint-placeholder-count="0">
+                  <div style="position:relative;border:1px solid #c9d1ce;background:#fff;padding:4px">
+                    <div role="img" aria-label="預計修改機構模擬圖" onClick="{{ im.view }}" style="display:block;height:160px;width:{{ im.w }}px;background-image:{{ im.bg }};background-size:contain;background-position:center;background-repeat:no-repeat;cursor:zoom-in"></div>
+                    <button data-noprint="1" onClick="{{ im.del }}" title="移除圖片" style="position:absolute;top:4px;right:4px;width:26px;height:26px;border:1px solid #c9d1ce;background:#fff;color:#5b6663;font-size:15px;cursor:pointer;line-height:1" style-hover="border-color:oklch(0.6 0.19 25);color:oklch(0.5 0.19 25)">×</button>
+                  </div>
+                </sc-for>
+                <label data-noprint="1" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:150px;height:170px;border:1px dashed #8f9b97;color:oklch(0.34 0.06 190);font-size:15px;cursor:pointer;box-sizing:border-box;background:transparent;text-align:center" style-hover="background:oklch(0.95 0.018 190)">
+                  <span style="font-size:26px;line-height:1">＋</span><span>上傳模擬圖</span>
+                  <input type="file" accept="image/*" multiple="multiple" onChange="{{ r.addSims }}" style="display:none">
+                </label>
+              </div>
+            </div>
+            </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+  </sc-if>
+  <sc-if value="{{ memoVisible }}" hint-placeholder-val="{{ false }}">
+    <div data-noprint="{{ memoNoPrint }}" style="display:flex;flex-direction:column;gap:16px;background:#fff;border:1px solid #8f9b97;padding:20px 24px">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;border-bottom:2px solid oklch(0.34 0.06 190);padding-bottom:12px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <button data-noprint="1" onClick="{{ toggleMemo }}" style="font-family:inherit;font-size:14px;padding:6px 12px;border:1px solid #8f9b97;background:#fff;color:#1b2422;cursor:pointer;white-space:nowrap" style-hover="background:#f3f5f4">← 返回總表</button>
+          <h2 style="margin:0;font-size:26px;font-weight:900;letter-spacing:0.04em;color:#1b2422">備忘錄</h2>
+        </div>
+        <span style="color:#5b6663;font-size:15px">{{ memoSaved }}</span>
+      </div>
+      <textarea value="{{ memo }}" onChange="{{ setMemo }}" rows="18" placeholder="在此輸入備忘內容…" style="font-family:inherit;font-size:15px;line-height:1.6;border:1px solid #c9d1ce;outline:none;resize:vertical;background:#fafbfb;color:#1b2422;width:100%;box-sizing:border-box;padding:8px 10px;cursor:text" style-focus="border-color:oklch(0.45 0.07 190);background:#fff"></textarea>
+    </div>
+  </sc-if>
+  </div>
+
+  <sc-for list="{{ shown }}" as="b" hint-placeholder-count="1">
+    <section style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="background:oklch(0.34 0.06 190);color:#fff;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:20px;padding:4px 12px;letter-spacing:0.04em">{{ b.id }}</div>
+        <div style="font-size:15px;color:#5b6663">{{ b.summary }}</div>
+      </div>
+      <div style="overflow-x:auto;border:1px solid #8f9b97;background:#fff">
+        <div style="min-width:1134px;font-size:16px;line-height:1.3">
+          <div style="display:grid;grid-template-columns:80px 130px 160px 64px 96px minmax(240px,1fr) 150px 150px 110px;background:oklch(0.34 0.06 190);color:#fff;font-weight:500;letter-spacing:0.04em;position:sticky;top:0">
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">樓層</div>
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">負責人</div>
+            <div style="padding:10px 16px;border-right:1px solid oklch(0.5 0.05 190)">站點</div>
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">燈號</div>
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">損壞數量</div>
+            <div style="padding:10px 16px;border-right:1px solid oklch(0.5 0.05 190)">硬體損壞內容</div>
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">損壞日期</div>
+            <div style="padding:10px 0;text-align:center;border-right:1px solid oklch(0.5 0.05 190)">預計修復日期</div>
+            <div style="padding:10px 0;text-align:center">累積天數</div>
+          </div>
+          <sc-for list="{{ b.floors }}" as="fl" hint-placeholder-count="2">
+            <div style="display:grid;grid-template-columns:80px 130px minmax(0,1fr);border-top:2px solid oklch(0.34 0.06 190)">
+              <div style="display:flex;align-items:center;justify-content:center;background:oklch(0.95 0.018 190);color:oklch(0.34 0.06 190);font-weight:900;font-size:22px;border-right:1px solid #8f9b97">{{ fl.name }}</div>
+              <div style="display:flex;align-items:center;padding:6px 10px;border-right:1px solid #8f9b97">
+                <input value="{{ fl.owner }}" onChange="{{ fl.setOwner }}" placeholder="負責人" title="負責人" style="font-family:inherit;font-size:15px;font-weight:500;text-align:center;border:0;outline:none;padding:5px 0;width:100%;min-width:0;box-sizing:border-box;background:transparent;color:#1b2422">
+              </div>
+              <div style="display:flex;flex-direction:column">
+                <sc-for list="{{ fl.stations }}" as="st" hint-placeholder-count="4">
+                  <div style="display:grid;grid-template-columns:160px 64px 96px minmax(240px,1fr) 150px 150px 110px;min-height:{{ rowH }};border-bottom:{{ st.bottom }};background:{{ st.rowBg }}">
+                    <div style="padding:0 16px;display:flex;align-items:center;gap:6px;font-weight:500;border-right:1px solid #8f9b97"><span>{{ st.name }}</span><span style="color:oklch(0.45 0.07 190);font-weight:400">{{ st.tag }}</span></div>
+                    <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">
+                      <button onClick="{{ st.cycle }}" title="{{ st.lightLabel }}" style="width:28px;height:28px;border:0;padding:0;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center"><span style="width:14px;height:14px;border-radius:50%;background:{{ st.lightColor }};box-shadow:0 0 0 4px {{ st.lightHalo }}"></span></button>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">
+                      <input type="text" inputmode="numeric" value="{{ st.dmg }}" onChange="{{ st.setDmg }}" title="損壞數量" style="font-family:inherit;font-size:15px;border:0;outline:none;background:transparent;color:#1b2422;width:100%;padding:6px 8px;box-sizing:border-box;text-align:center" style-focus="background:#fff;box-shadow:inset 0 0 0 2px oklch(0.45 0.07 190)">
+                    </div>
+                    <div style="padding:0 16px;display:flex;align-items:center;border-right:1px solid #8f9b97">
+                      <textarea value="{{ st.content }}" onChange="{{ st.setContent }}" rows="{{ st.contentRows }}" title="硬體損壞內容（Enter 換行）" style="font-family:inherit;font-size:15px;line-height:1.5;border:0;outline:none;resize:none;overflow:hidden;background:transparent;color:#1b2422;width:100%;padding:8px 0;box-sizing:border-box;display:block"></textarea>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">
+                      <input type="date" value="{{ st.date }}" onChange="{{ st.setDate }}" title="損壞日期" style="font-family:inherit;font-size:14px;border:0;outline:none;background:transparent;color:#1b2422;width:100%;padding:0 8px;box-sizing:border-box;text-align:center">
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #8f9b97">
+                      <input type="date" value="{{ st.eta }}" onChange="{{ st.setEta }}" title="預計修復日期" style="font-family:inherit;font-size:14px;border:0;outline:none;background:transparent;color:#1b2422;width:100%;padding:0 8px;box-sizing:border-box;text-align:center">
+                    </div>
+                    <div style="display:flex;align-items:baseline;justify-content:center;gap:4px"><span style="font-weight:700;font-size:18px;color:{{ st.daysColor }}">{{ st.days }}</span><span style="font-size:13px;color:#5b6663">{{ st.daysUnit }}</span></div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+  </sc-for>
+  <sc-if value="{{ hasViewImg }}" hint-placeholder-val="{{ false }}">
+    <div data-noprint="1" onClick="{{ closeViewImg }}" style="position:fixed;inset:0;z-index:50;background:rgba(20,28,26,0.82);display:flex;align-items:center;justify-content:center;padding:32px;cursor:zoom-out">
+      <div role="img" aria-label="圖片預覽" style="width:100%;height:100%;background-image:{{ viewImgBg }};background-size:contain;background-position:center;background-repeat:no-repeat"></div>
+    </div>
+  </sc-if>
+</div>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#1f5753"></rect><circle cx="50" cy="50" r="20" fill="#5cc28a"></circle></svg></template></x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultBuilding&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;自動化整體維運狀態&quot;,&quot;ALL&quot;,&quot;K11&quot;,&quot;K18&quot;,&quot;K21&quot;,&quot;K22&quot;,&quot;K25&quot;],&quot;default&quot;:&quot;ALL&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;compact&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">class Component extends DCLogic {
+  static eqName(file) {
+    if (!file) return '';
+    let s = String(file).replace(/\.[^.]+$/, '').replace(/[_\s]*\((security[^)]*)\)\s*$/i, '');
+    s = s.replace(/^\s*\d{8,14}\s*[~～\-_]\s*\d{8,14}\s*_?/, '').replace(/[_\s]*row\s*_?\s*data\s*$/i, '');
+    return s.replace(/^_+|_+$/g, '').trim();
+  }
+  static toDay(v) {
+    const p = n => String(n).padStart(2, '0'), ymd = d => isNaN(d) ? '' : `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    if (v instanceof Date) return ymd(v);
+    if (typeof v === 'number' && v > 20000 && v < 80000) { const d = new Date(Math.round((v - 25569) * 864e5)); return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`; }
+    const s = String(v ?? '').trim(); if (!s) return '';
+    let m = s.match(/(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})/); if (m) return `${m[1]}-${p(m[2])}-${p(m[3])}`;
+    m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/); if (m) return `${m[3].length === 2 ? '20' + m[3] : m[3]}-${p(m[1])}-${p(m[2])}`;
+    return ymd(new Date(s));
+  }
+  static cleanErr(v) {
+    const s = String(v ?? '').replace(/[\r\n\t\u3000]+/g, ' ').replace(/ {2,}/g, ' ').trim();
+    return /^(\(空白\)|空白|null|n\/a|none)$/i.test(s) ? '' : s;
+  }
+  static shrink(file) {
+    return new Promise(res => {
+      const r = new FileReader();
+      r.onload = () => { const img = new Image(); img.onload = () => {
+        const k = Math.min(1, 1280 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+        res(c.toDataURL('image/jpeg', 0.82));
+      }; img.onerror = () => res(null); img.src = r.result; };
+      r.onerror = () => res(null); r.readAsDataURL(file);
+    });
+  }
+  static imgSrc(s) { return /^(data:|https?:)/.test(s) ? s : (window.__API_BASE || '') + s; }
+  static async upload(file) {
+    const data = await Component.shrink(file); if (!data) return null;
+    try {
+      const blob = await (await fetch(data)).blob();
+      const fd = new FormData(); fd.append('file', blob, (file.name || 'img').replace(/\.[^.]+$/, '') + '.jpg');
+      const r = await fetch((window.__API_BASE || '') + 'api/upload', { method: 'POST', body: fd });
+      const j = await r.json(); if (j && j.url) return j.url;
+    } catch (e) { console.error('[upload fail]', e); }
+    return data;
+  }
+  static dmgOpts(cur) {
+    const n = Math.max(30, Number(cur) || 0);
+    return [{ v: '', t: '' }, ...Array.from({ length: n + 1 }, (_, i) => ({ v: String(i), t: String(i) }))];
+  }
+  static KPI_T = 135;
+  static kpiRows(b) {
+    const out = [];
+    Object.entries(Component.DATA[b] || {}).forEach(([fl, arr]) => arr.forEach((s, i) => {
+      const [n, t] = String(s).split('|'); if (t === '天車') return;
+      out.push({ fl, key: `${fl}|${i}`, st: t ? `${n} ${t}` : n });
+    }));
+    return out;
+  }
+  static kpiHeads(d) {
+    const def = ['前5週', '前4週', '前3週', '前2週', '前1週', '本週'], h = (d && d.heads) || [];
+    return def.map((x, i) => h[i] || x);
+  }
+  static kNum(x) { return (x === '' || x == null || isNaN(+x)) ? null : +x; }
+  getKpi() {
+    if (this.state.kpiData) return this.state.kpiData;
+    try { return JSON.parse(localStorage.getItem('equip-status-kpi')) || {}; } catch (e) { return {}; }
+  }
+  saveKpi(b, fn) {
+    const all = { ...this.getKpi() }; all[b] = fn({ ...(all[b] || {}) });
+    try { localStorage.setItem('equip-status-kpi', JSON.stringify(all)); } catch (e) {}
+    this.setState({ kpiData: all });
+  }
+  kpiSum(b) {
+    const d = this.getKpi()[b] || {}, v = d.v || {}, T = Component.KPI_T, N = Component.kNum;
+    const rows = Component.kpiRows(b).map(r => ({ ...r, vals: (v[r.key] || ['', '', '', '', '', '']).map(x => x ?? '') }));
+    const hasAny = rows.some(r => r.vals.some(x => x !== ''));
+    const bad = rows.filter(r => N(r.vals[5]) != null && N(r.vals[5]) >= T).sort((a, c) => N(c.vals[5]) - N(a.vals[5]));
+    return { d, rows, hasAny, bad, q: d.q || {} };
+  }
+  async importKpi(b, e) {
+    const f = e.target.files && e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    if (!window.XLSX) { alert('Excel 模組載入中，請稍後再試'); return; }
+    try {
+      const wb = window.XLSX.read(await f.arrayBuffer(), { type: 'array' });
+      const aoa = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '', raw: false });
+      const hi = aoa.findIndex(r => r.some(c => /站點|站別|station/i.test(String(c))));
+      if (hi < 0) { alert('找不到「站點」欄位，請確認 Excel 表頭'); return; }
+      const H = aoa[hi].map(c => String(c).replace(/\s/g, ''));
+      const si = H.findIndex(h => /站點|站別|station/i.test(h)), fi = H.findIndex(h => /樓層|floor/i.test(h));
+      const data = aoa.slice(hi + 1).filter(r => r.some(c => String(c).trim()));
+      let slots = {};
+      H.forEach((h, j) => { const m = h.match(/前(\d)週/); if (m && +m[1] >= 1 && +m[1] <= 5) slots[j] = 5 - +m[1]; else if (/本週/.test(h)) slots[j] = 5; });
+      if (!Object.keys(slots).length) {
+        const num = H.map((_, j) => j).filter(j => j !== si && j !== fi && data.some(r => String(r[j]).trim() !== '' && !isNaN(+r[j])));
+        num.slice(-6).reverse().forEach((j, k) => { slots[j] = 5 - k; });
+      }
+      const rows = Component.kpiRows(b), used = new Set(), v = {};
+      const norm = s => String(s).trim().toLowerCase().replace(/\s+/g, ' ');
+      const nf = s => { s = String(s).trim().toUpperCase(); return /^\d+$/.test(s) ? s + 'F' : s; };
+      let curF = '', hit = 0;
+      data.forEach(r => {
+        if (fi >= 0 && String(r[fi]).trim()) curF = nf(r[fi]);
+        const st = norm(r[si]); if (!st) return;
+        const m = rows.find(x => !used.has(x.key) && (fi < 0 || !curF || x.fl === curF) && (norm(x.st) === st || norm(x.st.split(' ')[0]) === st));
+        if (!m) return;
+        used.add(m.key); hit++;
+        const arr = ['', '', '', '', '', ''];
+        Object.entries(slots).forEach(([j, k]) => { const c = String(r[j]).trim(); arr[k] = c !== '' && !isNaN(+c) ? String(+c) : ''; });
+        v[m.key] = arr;
+      });
+      if (!hit) { alert('Excel 中沒有與此廠區相符的站點'); return; }
+      const heads = ['', '', '', '', '', ''];
+      Object.entries(slots).forEach(([j, k]) => { heads[k] = String(aoa[hi][j]).trim(); });
+      const wm = heads[5].match(/(\d{1,2})\s*週|W\s*(\d{1,2})|wk\s*(\d{1,2})/i) || heads[5].match(/^(\d{1,2})$/);
+      const wk = wm ? (wm[1] || wm[2] || wm[3]) : null;
+      let qx = null;
+      const qr = aoa.find(r => r.some(c => /重大品質|品質異常/.test(String(c))));
+      if (qr) {
+        const cl = c => { const s = String(c ?? '').trim().replace(/件$/, '').trim(); return s !== '' && !isNaN(+s) ? String(+s) : null; };
+        const after = re => { const j = qr.findIndex(c => re.test(String(c))); if (j < 0) return null; for (let k = j + 1; k < qr.length; k++) { const x = cl(qr[k]); if (x != null) return x; } return null; };
+        let cur = after(/本週/), prev = after(/上週/);
+        if (cur == null) { const j = Object.keys(slots).find(j => slots[j] === 5); if (j != null) cur = cl(qr[j]); }
+        if (prev == null) { const j = Object.keys(slots).find(j => slots[j] === 4); if (j != null) prev = cl(qr[j]); }
+        if (cur == null && prev == null) { const nums = qr.map(cl).filter(x => x != null); cur = nums[0] ?? null; prev = nums[1] ?? null; }
+        qx = { ...(cur != null ? { cur } : {}), ...(prev != null ? { prev } : {}) };
+      }
+      const d = new Date(), p = n => String(n).padStart(2, '0');
+      this.saveKpi(b, o => ({ ...o, heads, ...(qx ? { q: { ...(o.q || {}), ...qx } } : {}), ...(wk ? { week: String(+wk) } : {}), v: { ...(o.v || {}), ...v }, file: f.name, at: `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}` }));
+    } catch (err) { alert('無法讀取此檔案，請確認為 Excel (.xlsx / .xls) 或 CSV'); }
+  }
+  exportKpi(b) {
+    if (!window.XLSX) { alert('Excel 模組載入中，請稍後再試'); return; }
+    const { d, rows, q } = this.kpiSum(b), T = Component.KPI_T, N = Component.kNum;
+    const aoa = [['樓層', '站點', '機故目標', ...Component.kpiHeads(d), '是否達標']];
+    let last = '';
+    rows.forEach(r => { const c = N(r.vals[5]); aoa.push([r.fl === last ? '' : r.fl, r.st, T, ...r.vals.map(x => x === '' ? '' : +x), c == null ? '未輸入' : c < T ? '達標' : '未達標']); last = r.fl; });
+    aoa.push([], ['重大品質異常', '本週', q.cur ?? '', '上週', q.prev ?? '']);
+    const wb = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(wb, window.XLSX.utils.aoa_to_sheet(aoa), b);
+    window.XLSX.writeFile(wb, `${b}-自動化機故KPI_第${d.week || '__'}週_(Security C).xlsx`);
+  }
+  kpiVals() {
+    const pg = this.state.kpiPage, T = Component.KPI_T, N = Component.kNum, B = ['K11', 'K18', 'K21', 'K22', 'K25'];
+    const kpiCards = B.map(id => { const s = this.kpiSum(id);
+      return { id, open: () => this.setState({ kpiPage: id }), weekLabel: `第 ${s.d.week || '__'} 週`,
+        badLabel: s.hasAny ? `${s.bad.length} 站` : '– 站', qLabel: (s.q.cur ?? '') !== '' ? `${s.q.cur} 件` : '– 件' }; });
+    const b = typeof pg === 'string' && B.includes(pg) ? pg : null;
+    const out = { kpiList: pg === true || (!!pg && !b), kpiDetail: !!b, kpiCards, kpiBack: () => this.setState({ kpiPage: true }) };
+    if (!b) return out;
+    const s = this.kpiSum(b), RED = 'oklch(0.55 0.19 25)', OK = 'oklch(0.6 0.15 150)';
+    const setV = (key, k) => e => { const val = e.target.value.replace(/[^\d.]/g, '');
+      this.saveKpi(b, o => { const v = { ...(o.v || {}) }; const a = [...(v[key] || ['', '', '', '', '', ''])]; a[k] = val; v[key] = a; return { ...o, v }; }); };
+    const GRN = 'oklch(0.48 0.13 150)', fgOf = x => x == null ? '#1b2422' : x >= T ? RED : GRN;
+    const groups = [];
+    let last = '';
+    s.rows.forEach(r => {
+      const g = parseInt(r.fl) < 8 ? 'low' : r.fl;
+      let G = groups.find(x => x.g === g); if (!G) { G = { g, rows: [] }; groups.push(G); }
+      const nums = r.vals.map(N), mx = Math.max(T, ...nums.filter(x => x != null)), c = nums[5];
+      const first = r.fl !== last; last = r.fl;
+      G.rows.push({ fl: first ? r.fl : '', st: r.st, T, topB: first && G.rows.length ? '2px solid #8f9b97' : '1px solid #e3e8e6',
+        prev: r.vals.slice(0, 5).map((x, k) => ({ v: x, set: setV(r.key, k), fg: fgOf(nums[k]) })), cur: { v: r.vals[5], set: setV(r.key, 5), fg: fgOf(c) },
+        hasTrend: nums.some(x => x != null), noTrend: !nums.some(x => x != null),
+        bars: nums.map(x => ({ h: x == null ? '2px' : `${Math.max(2, Math.round(20 * x / mx))}px`, c: x == null ? '#e3e8e6' : x >= T ? RED : 'oklch(0.5 0.07 190)' })),
+        status: c == null ? '未輸入' : c < T ? '達標' : '未達標', dot: c == null ? '#c3cac8' : c < T ? OK : RED, stFg: c == null ? '#5b6663' : c < T ? GRN : RED });
+    });
+    const bmx = Math.max(T, ...s.bad.map(r => N(r.vals[5])));
+    const KH = Component.kpiHeads(s.d);
+    return { ...out, kpiB: b, kpiGroups: groups, kpiHeadPrev: KH.slice(0, 5).map(t => ({ t })), kpiHeadCur: KH[5], kpiWeek: s.d.week || '',
+      setKpiWeek: e => { const w = e.target.value.replace(/\D/g, '').slice(0, 2); this.saveKpi(b, o => ({ ...o, week: w })); },
+      kpiQCur: String(s.q.cur ?? ''), kpiQPrev: String(s.q.prev ?? ''),
+      kpiQCurFg: +(s.q.cur || 0) > 0 ? 'oklch(0.5 0.19 25)' : '#1b2422', kpiQPrevFg: +(s.q.prev || 0) > 0 ? 'oklch(0.5 0.19 25)' : '#1b2422',
+      setKpiQCur: e => { const x = e.target.value.replace(/\D/g, ''); this.saveKpi(b, o => ({ ...o, q: { ...(o.q || {}), cur: x } })); },
+      setKpiQPrev: e => { const x = e.target.value.replace(/\D/g, ''); this.saveKpi(b, o => ({ ...o, q: { ...(o.q || {}), prev: x } })); },
+      kpiBadCount: s.hasAny ? `共 ${s.bad.length} 站` : '共 – 站',
+      kpiNoData: !s.hasAny, kpiAllOk: s.hasAny && !s.bad.length, kpiHasBad: s.bad.length > 0,
+      kpiBad: (() => { const sc = Math.max(bmx, T) * 1.15; return s.bad.map(r => { const n = N(r.vals[5]);
+        return { fl: r.fl, st: r.st, n, w: `${Math.min(100, 100 * n / sc).toFixed(1)}%`, mk: `${(100 * T / sc).toFixed(1)}%`, goal: `目標 < ${T}`, over: `超出 +${n - T}` }; }); })(),
+      kpiFile: s.d.file ? `資料來源：${s.d.file} · 匯入於 ${s.d.at}` : '',
+      kpiHasFile: !!s.d.file,
+      importKpi: e => this.importKpi(b, e), exportKpi: () => this.exportKpi(b),
+      clearKpi: () => { if (confirm(`清除 ${b} 已匯入的資料？`)) this.saveKpi(b, o => ({ ...o, v: {}, heads: null, file: '', at: '' })); } };
+  }
+  static DATA = {
+    K11: { '3F': ['跨樓層||1'], '4F': ['跨樓層||1'],
+      '5F': ['跨樓層||2','3380||2','Dry room||1','3390||8','3400|天車|24|x','3400||64'],
+      '6F': ['3260/4110||2','Dry room/3670||5','4600||6'],
+      '8F': ['3260||2','Dry room/3670||10','3450||6','3800||16','3800|天車|15|x','4110||2','4507||6','3910||21','4507 / 3910|天車|54|x'] },
+    K18: {
+      '10F': ['2880','3101','3413','3414','2740','2770','2773','2774','3603','3613','3460','3910','4600','4805'],
+      '11F': ['2845','2500','2715','2880','2900','2945','XRAY','3101','3190','3380','3390','水珠角','3400','3414','3418','3460','3600','2770','3910','4600']
+    },
+    K21: { '8F': ['2845','2500','2715','2800','2900','3190','3190|天車||x','3380','Dry room','3390','3400','3410','2845→3410|天車||x','ZIP||3','WIP||3'],
+      '9F': ['WIP儲架','中央儲架','WIP儲架','2770','OHT'] },
+    K22: { '5F': ['3380','Dry room','3390','3400/下貨區','3400|天車||x'], '8F': ['3380','Dry room','3390'] },
+    K25: { '8F': ['2845~2900','3190','3450|手臂','3450|WIP','4507','3260','3450','Dry room / 3670','3800','跨樓層'], '9F': ['3910','4600'] }
+  };
+  static LIGHTS = [
+    { label: '正常', c: 'oklch(0.68 0.15 150)', h: 'oklch(0.68 0.15 150 / 0.2)', bg: '#fff' },
+    { label: '維修中', c: 'oklch(0.78 0.15 75)', h: 'oklch(0.78 0.15 75 / 0.25)', bg: 'oklch(0.98 0.025 80)' },
+    { label: '停機', c: 'oklch(0.6 0.19 25)', h: 'oklch(0.6 0.19 25 / 0.2)', bg: 'oklch(0.97 0.025 25)' }
+  ];
+  static CARS = [
+    { id: 'K11-5F-3400', count: 24, cars: [
+      ['101',1],['102',1],['104',0],['105',1],['107',0],['108',1],['109',1],['111',1],['112',0],['113',1],['114',1],['115',1],['116',1],['117',1],['118',1],['119',1],
+      ['121',1],['122',1],['123',1],['124',1],['125',1],['126',0],['127',1],['128',1],['103',1]
+    ] },
+    { id: 'K11-8F-3800', cars: [
+      ['1',1],['2',1],['5',1],['7',1],['8',1],['9',1],['11',1],['13',1],['14',1],['15',1],['16',1],['',0],['',0],['',0],['',0],['',0],
+      ['34',1],['35',1]
+    ] },
+    { id: 'K11-8F-3910→4507', cars: ['3','4','6','7','10','11','12','13','14','15','17','20','21','22','23','24','26','27','28',
+      '29','30','31','34','35','36','37','38','39','40','41','42','48','49','51','53','54','55','56',
+      '60','61','62','64','63','65','102'].map(n => [n, 1]) },
+    { id: 'K21-8F-3190', cars: [
+      ['101',1],['102',0],['103',1],['104',1],['106',1],['107',1],['109',1],['111',1],['112',1],['113',0],['114',0],['119',1],['120',0]
+    ] },
+    { id: 'K21-8F-2845→3410', cars: Array.from({ length: 68 }, (_, i) => [String(i + 1), 1]) },
+    { id: 'K22-5F-3400', cars: [
+      ['1',1],['2',0],['3',1],['4',1],['5',1],['6',0],['7',0],['8',1],['9',1],['10',0],['12',1],['13',1],['14',1],['15',1],['16',1],['17',1],
+      ['18',1],['19',1],['20',1]
+    ] },
+    { id: 'K25-8F-3800', cars: [
+      ['1',0],['2',1],['3',1],['4',0],['5',1],['6',1],['7',0],['8',0],['9',1],['10',1],['11',1],['12',1],['13',1],['14',0],['15',0]
+    ] },
+    { id: 'K25-8F-2845', cars: Array.from({ length: 32 }, (_, i) => [String(i + 1), [2, 3, 4, 14, 28, 30].includes(i + 1) ? 0 : 1]) },
+    { id: 'K25-8F-3190', cars: Array.from({ length: 20 }, (_, i) => [String(i + 1), [1, 5, 11, 20].includes(i + 1) ? 0 : 1]) },
+    { id: 'K25-8F-4507', cars: Array.from({ length: 15 }, (_, i) => [String(i + 1), [2, 5, 6, 9, 12, 14, 15].includes(i + 1) ? 0 : 1]) },
+    { id: 'K25-8F-3450', label: 'K25-8F-3450(下層)', cars: Array.from({ length: 6 }, (_, i) => [String(i + 1), [3, 5].includes(i + 1) ? 0 : 1]) },
+    { id: 'K25-8F-3450-mid', label: 'K25-8F-3450(中層)', cars: [['1',1],['2',1],['3',1],['4',1]] },
+    { id: 'K25-9F-3910', cars: Array.from({ length: 10 }, (_, i) => [String(i + 1), [1, 6, 7, 9].includes(i + 1) ? 0 : 1]) },
+    { id: 'K25-8F-跨樓層-3910WIP', label: 'K25-9F-跨樓層-3910WIP', cars: [['16',1],['17',1],['18',1],['19',1]] },
+    { id: 'K25-8F-4600', label: 'K25-9F-4600', cars: Array.from({ length: 10 }, (_, i) => [String(i + 1), i + 1 === 3 ? 0 : 1]) }
+  ];
+  getCars(blk) {
+    const saved = (this.state.carData || {})[blk.id];
+    if (saved) return saved;
+    const cs = this.state.carStatus || {};
+    return blk.cars.map(([no, v]) => { const k = `${blk.id}/${no}`; return { no, st: no ? ((k in cs ? cs[k] : v) ? 'V' : 'X') : '' }; });
+  }
+  updateCar(blk, i, patch) {
+    this.setState(s => {
+      const cur = ((s.carData || {})[blk.id] || this.getCars(blk)).slice();
+      while (cur.length <= i) cur.push({ no: '', st: '' });
+      cur[i] = { ...cur[i], ...patch };
+      while (cur.length && !cur[cur.length - 1].no && !cur[cur.length - 1].st) cur.pop();
+      const carData = { ...(s.carData || {}), [blk.id]: cur };
+      try { localStorage.setItem('equip-car-data', JSON.stringify(carData)); } catch (e) {}
+      return { carData };
+    });
+  }
+  toggleCar(k, v) {
+    this.setState(s => {
+      const carStatus = { ...(s.carStatus || {}), [k]: v ? 1 : 0 };
+      try { localStorage.setItem('equip-car-status', JSON.stringify(carStatus)); } catch (e) {}
+      return { carStatus };
+    });
+  }
+  state = { tab: null, lights: {} };
+  componentDidMount() {
+    try { const s = JSON.parse(localStorage.getItem('equip-status-lights') || '{}'); this.setState({ lights: s }); } catch (e) {}
+    try { const m = JSON.parse(localStorage.getItem('equip-status-memo') || '{}'); this.setState({ memo: m.text || '', memoAt: m.at || '' }); } catch (e) {}
+    try { const v = JSON.parse(localStorage.getItem('equip-status-improve') || 'null'); if (Array.isArray(v)) this.setState({ imps: v }); } catch (e) {}
+    try { const v = JSON.parse(localStorage.getItem('equip-status-project') || 'null'); if (Array.isArray(v)) this.setState({ projs: v }); } catch (e) {}
+    try { const v = JSON.parse(localStorage.getItem('equip-status-failure') || 'null'); if (Array.isArray(v)) this.setState({ fails: v }); } catch (e) {}
+    try { const v = JSON.parse(localStorage.getItem('equip-status-failtop3') || 'null'); if (v) this.setState({ failData: v.failData || null, failText: v.failText || {} }); } catch (e) {}
+    try { this.setState({ counts: JSON.parse(localStorage.getItem('equip-status-counts') || '{}') }); } catch (e) {}
+    try { this.setState({ dmgs: JSON.parse(localStorage.getItem('equip-status-dmgs') || '{}') }); } catch (e) {}
+    try { this.setState({ contents: JSON.parse(localStorage.getItem('equip-status-contents') || '{}') }); } catch (e) {}
+    try { const cd = localStorage.getItem('equip-car-data'); if (cd) this.setState({ carData: JSON.parse(cd) }); } catch (e) {}
+    try { this.setState({ carStatus: JSON.parse(localStorage.getItem('equip-car-status') || '{}') }); } catch (e) {}
+    try { this.setState({ etas: JSON.parse(localStorage.getItem('equip-status-etas') || '{}') }); } catch (e) {}
+    try { this.setState({ dates: JSON.parse(localStorage.getItem('equip-status-dates') || '{}') }); } catch (e) {}
+    try { this.setState({ owners: JSON.parse(localStorage.getItem('equip-status-owners') || '{}') }); } catch (e) {}
+  }
+  cycle(key) {
+    this.setState(s => {
+      const lights = { ...s.lights, [key]: ((s.lights[key] || 0) + 1) % 3 };
+      try { localStorage.setItem('equip-status-lights', JSON.stringify(lights)); } catch (e) {}
+      return { lights };
+    });
+  }
+  setDate(key, v) {
+    this.setState(s => {
+      const dates = { ...(s.dates || {}), [key]: v };
+      try { localStorage.setItem('equip-status-dates', JSON.stringify(dates)); } catch (e) {}
+      return { dates };
+    });
+  }
+  setCount(key, v) {
+    this.setState(s => {
+      const counts = { ...(s.counts || {}), [key]: v };
+      try { localStorage.setItem('equip-status-counts', JSON.stringify(counts)); } catch (e) {}
+      return { counts };
+    });
+  }
+  setDmg(key, v) {
+    this.setState(s => {
+      const dmgs = { ...(s.dmgs || {}), [key]: v };
+      try { localStorage.setItem('equip-status-dmgs', JSON.stringify(dmgs)); } catch (e) {}
+      return { dmgs };
+    });
+  }
+  setContent(key, v) {
+    this.setState(s => {
+      const contents = { ...(s.contents || {}), [key]: v };
+      try { localStorage.setItem('equip-status-contents', JSON.stringify(contents)); } catch (e) {}
+      return { contents };
+    });
+  }
+  setEta(key, v) {
+    this.setState(s => {
+      const etas = { ...(s.etas || {}), [key]: v };
+      try { localStorage.setItem('equip-status-etas', JSON.stringify(etas)); } catch (e) {}
+      return { etas };
+    });
+  }
+  setOwner(id, v) {
+    this.setState(s => {
+      const owners = { ...(s.owners || {}), [id]: v };
+      try { localStorage.setItem('equip-status-owners', JSON.stringify(owners)); } catch (e) {}
+      return { owners };
+    });
+  }
+  exportPptx(shown, ov, impOnly) {
+    const onlyName = { proj: '專案進度', fail: '機故分析', kpi: ov && ov.kpis && ov.kpis.length === 1 ? `${ov.kpis[0]}-自動化機故KPI` : 'ALL自動化機故KPI' }[impOnly] || '精進改善區';
+    if (impOnly && !(({ proj: ov.projs, fail: ov.fails, kpi: ov.kpis }[impOnly] || ov.imps) || []).length) { this.setState({ menuOpen: false }); alert(`${onlyName}目前沒有項目`); return; }
+    if (impOnly) shown = [];
+    const P = window.PptxGenJS;
+    if (!P) { alert('PowerPoint 模組載入中，請稍後再試'); return; }
+    const pptx = new P(); pptx.layout = 'LAYOUT_WIDE';
+    const F = 'Microsoft JhengHei', TEAL = '0F4848', LINE = '8F9B97';
+    const LC = { '正常': '3FAE5A', '維修中': 'E3A33A', '停機': 'D64545' };
+    const d = new Date(), ds = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+    const fmt = v => v ? v.replace(/-/g, '/') : '';
+    const colW = [0.6, 1.0, 1.5, 0.55, 0.8, 4.48, 1.2, 1.3, 1.1];
+    const head = ['樓層', '負責人', '站點', '燈號', '損壞數量', '硬體損壞內容', '損壞日期', '預計修復日期', '累積天數']
+      .map(t => ({ text: t, options: { fill: { color: TEAL }, color: 'FFFFFF', bold: true, align: 'center' } }));
+    const H = t => ({ text: t, options: { fill: { color: TEAL }, color: 'FFFFFF', bold: true, align: 'center' } });
+    const C = (t, o) => ({ text: String(t ?? ''), options: { align: 'center', ...(o || {}) } });
+    const tblOpt = { fontSize: 12, fontFace: F, color: '1B2422', valign: 'middle', fill: { color: 'FFFFFF' }, border: { type: 'solid', pt: 0.75, color: LINE } };
+    const hdr = (s, tag, tw) => {
+      s.background = { color: 'F3F5F4' };
+      s.addText(tag, { x: 0.4, y: 0.3, w: tw, h: 0.45, fill: { color: TEAL }, color: 'FFFFFF', fontSize: 16, bold: true, align: 'center', fontFace: F });
+      s.addText('A3-CIM_MRO', { x: 0.55 + tw, y: 0.28, w: 6.5, h: 0.5, fontSize: 24, bold: true, color: '1B2422', fontFace: F });
+      s.addText(`每日戰報   ${ds}`, { x: 8.9, y: 0.3, w: 4.03, h: 0.45, align: 'right', fontSize: 12, color: '5B6663', fontFace: F });
+    };
+    if (ov && !impOnly) {
+      const s = pptx.addSlide(); hdr(s, '自動化整體維運狀態', 2.9);
+      s.addText([
+        { text: `站點總數:${ov.ovN}`, options: { bold: true, fontSize: 20 } },
+        { text: `     ● 正常 ${ov.ovOk}`, options: { color: '1B2422' } },
+        { text: `     ● 維修中 ${ov.ovFix}` }, { text: `     ● 停機 ${ov.ovDown}` },
+        { text: `     妥善率 ${ov.ovRate}`, options: { bold: true } }
+      ], { x: 0.4, y: 0.95, w: 12.53, h: 0.5, fontSize: 15, color: '1B2422', fontFace: F });
+      const rows = [['廠區', '樓層數', '站點數', '正常', '維修中', '停機', '妥善率'].map(H),
+        ...ov.ovRows.map(r => [C(r.id, { bold: true, color: TEAL, fill: { color: 'E6F1F0' } }), C(r.floors), C(r.n), C(r.ok), C(r.fix), C(r.down), C(r.rate, { bold: true })])];
+      s.addTable(rows, { x: 0.4, y: 1.5, w: 12.53, colW: [1.5, 1.8, 1.8, 1.8, 1.8, 1.8, 2.03], rowH: 0.34, ...tblOpt, fontSize: 13 });
+      let y = 1.6 + 0.34 * rows.length;
+      s.addText(`● 維修中細項   ${ov.ovFixList.length} 個站點`, { x: 0.4, y, w: 12.53, h: 0.4, fontSize: 15, bold: true, color: '1B2422', fontFace: F });
+      y += 0.45;
+      if (ov.ovFixList.length) {
+        const fr = [['廠區', '樓層', '負責人', '站點', '損壞數量', '硬體損壞內容', '損壞日期', '預計修復日期', '累積天數'].map(H),
+          ...ov.ovFixList.map(x => [C(x.b, { bold: true, color: TEAL }), C(x.f, { bold: true }), C(x.owner), C(x.name, { align: 'left' }), C(x.dmg), C(x.content, { align: 'left' }), C(x.date), C(x.eta), C(x.days, { bold: true })])];
+        const rh = Math.min(0.32, (6.7 - y) / fr.length);
+        s.addTable(fr, { x: 0.4, y, w: 12.53, colW: [0.8, 0.7, 1.1, 1.8, 0.9, 3.53, 1.2, 1.4, 1.1], rowH: rh, ...tblOpt });
+        y += rh * fr.length + 0.1;
+      } else {
+        s.addText('目前沒有維修中的站點', { x: 0.4, y, w: 12.53, h: 0.5, fontSize: 14, color: '5B6663', fontFace: F, fill: { color: 'FFFFFF' }, line: { color: LINE, width: 0.75 }, margin: 0.15 });
+        y += 0.6;
+      }
+      s.addText([
+        { text: `天車總數:${ov.carTotal}`, options: { bold: true, fontSize: 16 } },
+        { text: `     V 正常 ${ov.carTotalOk}` }, { text: `     X 損壞 ${ov.carTotalBad}`, options: { color: 'C23B3B', bold: true } }
+      ], { x: 0.4, y, w: 12.53, h: 0.42, fontSize: 14, color: '1B2422', fontFace: F });
+    }
+    shown.forEach(b => {
+      const s = pptx.addSlide(); s.background = { color: 'F3F5F4' };
+      s.addText(b.id, { x: 0.4, y: 0.3, w: 0.85, h: 0.45, fill: { color: TEAL }, color: 'FFFFFF', fontSize: 18, bold: true, align: 'center', fontFace: F });
+      s.addText('自動化設備維運狀態', { x: 1.4, y: 0.28, w: 7, h: 0.5, fontSize: 24, bold: true, color: '1B2422', fontFace: F });
+      s.addText(`每日戰報   ${ds}`, { x: 8.9, y: 0.3, w: 4.03, h: 0.45, align: 'right', fontSize: 12, color: '5B6663', fontFace: F });
+      const rows = [head];
+      b.floors.forEach(f => f.stations.forEach((st, i) => {
+        const r = [];
+        if (i === 0) {
+          r.push({ text: f.name, options: { rowspan: f.stations.length, fill: { color: 'E6F1F0' }, color: TEAL, bold: true, fontSize: 14, align: 'center' } });
+          r.push({ text: f.owner || '', options: { rowspan: f.stations.length, align: 'center' } });
+        }
+        r.push({ text: st.tag ? `${st.name} ${st.tag}` : st.name, options: { bold: true } });
+        r.push({ text: '●', options: { color: LC[st.lightLabel] || LC['正常'], align: 'center', fontSize: 14 } });
+        r.push({ text: String(st.dmg || ''), options: { align: 'center' } });
+        r.push({ text: st.content || '', options: { valign: 'middle' } });
+        r.push({ text: fmt(st.date), options: { align: 'center' } });
+        r.push({ text: fmt(st.eta), options: { align: 'center' } });
+        r.push({ text: st.date ? `${st.days} 天` : '', options: { align: 'center', bold: true } });
+        rows.push(r);
+      }));
+      const rowH = Math.min(0.32, 6.2 / rows.length);
+      s.addTable(rows, { x: 0.4, y: 0.95, w: 12.53, colW, rowH, fontSize: 10, fontFace: F, color: '1B2422', valign: 'middle', fill: { color: 'FFFFFF' }, border: { type: 'solid', pt: 0.75, color: LINE }, margin: 0.04 });
+    });
+    const memo = (this.state.memo || '').trim();
+    if (memo && !impOnly) {
+      const s = pptx.addSlide(); s.background = { color: 'F3F5F4' };
+      s.addText('備忘錄', { x: 0.4, y: 0.3, w: 6, h: 0.5, fontSize: 24, bold: true, color: '1B2422', fontFace: F });
+      s.addText(memo, { x: 0.4, y: 1.0, w: 12.53, h: 6.1, fontSize: 16, color: '1B2422', fontFace: F, valign: 'top', fill: { color: 'FFFFFF' }, line: { color: LINE, width: 0.75 }, margin: 0.2 });
+    }
+    const listSlide = (title, list) => {
+      if (!list || !list.length) return;
+      if (title === '專案進度') {
+        const so = pptx.addSlide(); hdr(so, '專案總表', 1.8);
+        const tr = [['項目', '廠區', '樓層', '站點', '專案名稱', '負責人', '進度'].map(H),
+          ...list.map((x, i) => [C(i + 1, { bold: true, color: TEAL }), C(x.b), C(x.fl), C(x.st), C(x.issue, { align: 'left' }), C(x.owner), C(x.status || '規劃中', { bold: true })])];
+        so.addTable(tr, { x: 0.4, y: 0.95, w: 12.53, colW: [0.8, 1.1, 0.9, 1.6, 5.13, 1.5, 1.5], rowH: Math.min(0.42, 6.2 / tr.length), ...tblOpt, fontSize: 13 });
+      }
+      const s = pptx.addSlide(); hdr(s, title, 1.8);
+      const fmt = d => d ? d.replace(/-/g, '/') : '';
+      const LB = t => ({ text: t, options: { bold: true, color: TEAL, fill: { color: 'E6F1F0' }, align: 'center' } });
+      const ir = [['項目', '廠區', '樓層', '站點', '負責人', '開始日期', '預計完成日期', '進度'].map(H)];
+      list.forEach((x, i) => {
+        const bg = { fill: { color: i % 2 ? 'FBF3E4' : 'FFFFFF' } }, lb = t => ({ text: t, options: { bold: true, color: TEAL, fill: { color: i % 2 ? 'F1E2C4' : 'E6F1F0' }, align: 'center' } });
+        ir.push([C(i + 1, { bold: true, color: TEAL, ...bg }), C(x.b, bg), C(x.fl, bg), C(x.st, bg), C(x.owner, bg), C(fmt(x.start), bg), C(fmt(x.eta), bg), C(x.status || '規劃中', { bold: true, ...bg })]);
+        const isP = title === '專案進度';
+        ir.push([lb(isP ? '專案名稱' : title === '機故分析' ? '故障描述' : '問題描述'), { text: x.issue || '', options: { colspan: 7, align: 'left', ...bg } }]);
+        if (isP) ir.push([lb('導入事由'), { text: x.reason || '', options: { colspan: 7, align: 'left', ...bg } }]);
+        if (isP) ir.push([lb('評估內容'), { text: x.eval || '', options: { colspan: 7, align: 'left', ...bg } }]);
+        ir.push([lb('改善方式/對策'), { text: x.fix || '', options: { colspan: 7, align: 'left', ...bg } }]);
+      });
+      s.addTable(ir, { x: 0.4, y: 0.95, w: 12.53, colW: [1.5, 1.0, 0.9, 2.53, 1.4, 1.7, 1.9, 1.6], ...tblOpt });
+      const imgFields = title === '專案進度' ? [['imgs', '機台圖片'], ['layouts', 'Layout圖'], ['sims', '預計修改機構模擬圖']] : title === '機故分析' ? [] : [['asis', 'AS IS圖'], ['tobe', 'TO BE圖']];
+      list.forEach((x, i) => imgFields.forEach(([f, lbl]) => {
+        const imgs = x[f] || [];
+        for (let p = 0; p < imgs.length; p += 2) {
+          const si = pptx.addSlide(); hdr(si, title, 1.8);
+          si.addText(`項目 ${i + 1}　${x.issue || ''}　${lbl}`, { x: 0.4, y: 0.95, w: 12.53, h: 0.45, fontSize: 16, bold: true, color: '1B2422', fontFace: F });
+          imgs.slice(p, p + 2).forEach((src, k) => si.addImage({ ...(/^data:/.test(src) ? { data: src } : { path: Component.imgSrc(src) }), x: 0.4 + k * 6.37, y: 1.55, w: 6.16, h: 5.6, sizing: { type: 'contain', w: 6.16, h: 5.6 } }));
+        }
+      }));
+    };
+    const ft = (ov && ov.failText) || {};
+    if (ov && ((ov.failTop || []).length || Object.values(ft).some(Boolean))) {
+      const RC = ['C23B3B', 'C98A1E', '4F7F86'], top = ov.failTop || [], tot = ov.failTotal || 0;
+      const pc = n => tot ? `${Math.round(n / tot * 1000) / 10}%` : '—';
+      const X0 = 0.4, W = 12.53, LW = 1.5, PW = 1.75;
+      const box = (sl, o) => sl.addShape(pptx.ShapeType.rect, { line: { color: LINE, width: 0.75 }, fill: { color: 'FFFFFF' }, ...o });
+      const txt = (sl, t, o) => sl.addText(t, { fontFace: F, color: '1B2422', margin: 0.08, valign: 'middle', ...o });
+      const LT = 'E6F1F0';
+      // 1) 機台 + 機故排行（同網頁）
+      const s = pptx.addSlide(); hdr(s, '每週機故TOP3分析', 2.6);
+      let y = 1.0;
+      box(s, { x: X0, y, w: W, h: 0.6 });
+      txt(s, '機台', { x: X0, y, w: LW, h: 0.6, align: 'center', bold: true, color: TEAL, fontSize: 15, fill: { color: LT }, line: { color: LINE, width: 0.75 } });
+      txt(s, ov.failEq || '—', { x: X0 + LW + 0.1, y, w: W - LW - PW - 0.2, h: 0.6, bold: true, fontSize: 18 });
+      txt(s, [{ text: '總體機故次數', options: { fontSize: 10, color: '5B6663', breakLine: true } }, { text: tot ? `${tot} 次` : '—', options: { fontSize: 16, bold: true } }],
+        { x: X0 + W - PW, y, w: PW, h: 0.6, align: 'center', line: { color: LINE, width: 0.75 } });
+      y = 1.85; const RH = 0.9;
+      box(s, { x: X0, y, w: W, h: RH * 3 });
+      txt(s, '機故排行', { x: X0, y, w: LW, h: RH * 3, align: 'center', bold: true, color: 'FFFFFF', fontSize: 16, fill: { color: TEAL } });
+      const mx = top[0] ? top[0][1] : 1;
+      [0, 1, 2].forEach(i => {
+        const t = top[i], ry = y + i * RH, nx = X0 + LW + 1.25, nw = W - LW - 1.25 - 1.2 - PW - 0.1, cx = X0 + W - PW - 1.2;
+        if (i) s.addShape(pptx.ShapeType.line, { x: X0 + LW, y: ry, w: W - LW, h: 0, line: { color: 'C9D1CE', width: 0.75 } });
+        txt(s, `TOP${i + 1}`, { x: X0 + LW + 0.15, y: ry + 0.27, w: 0.95, h: 0.36, align: 'center', bold: true, color: 'FFFFFF', fontSize: 13, fill: { color: RC[i] }, margin: 0 });
+        txt(s, t ? t[0] : '—', { x: nx, y: ry + 0.1, w: nw, h: 0.45, bold: true, fontSize: 14, valign: 'bottom' });
+        s.addShape(pptx.ShapeType.rect, { x: nx + 0.08, y: ry + 0.62, w: nw - 0.16, h: 0.08, fill: { color: 'E3E8E6' }, line: { color: 'E3E8E6', width: 0 } });
+        if (t) s.addShape(pptx.ShapeType.rect, { x: nx + 0.08, y: ry + 0.62, w: Math.max(0.05, (nw - 0.16) * t[1] / mx), h: 0.08, fill: { color: RC[i] }, line: { color: RC[i], width: 0 } });
+        txt(s, t ? `${t[1]} 次` : '', { x: cx, y: ry, w: 1.2, h: RH, align: 'center', fontSize: 15 });
+        txt(s, [{ text: '整體機故占比', options: { fontSize: 10, color: '5B6663', breakLine: true } }, { text: t ? pc(t[1]) : '—', options: { fontSize: 16, bold: true, color: i === 0 ? 'C23B3B' : '1B2422' } }],
+          { x: X0 + W - PW, y: ry, w: PW, h: RH, align: 'center' });
+      });
+      s.addShape(pptx.ShapeType.line, { x: X0 + W - PW, y, w: 0, h: RH * 3, line: { color: 'C9D1CE', width: 0.75 } });
+      // 2) TOP1~3 分析（同網頁）
+      [0, 1, 2].forEach(i => {
+        const sd = pptx.addSlide(); hdr(sd, '每週機故TOP3分析', 2.6);
+        const t = top[i], rk = i ? `reason${i + 1}` : 'reason', sk = i ? `solution${i + 1}` : 'solution';
+        const RH1 = 0.65, lh = s2 => Math.max(RH1, String(s2 || '').split('\n').length * 0.28 + 0.2);
+        const hR = lh(ft[rk]), hS = lh(ft[sk]), yy = 1.0;
+        box(sd, { x: X0, y: yy, w: W, h: RH1 + hR + hS });
+        txt(sd, `TOP${i + 1}`, { x: X0, y: yy, w: LW, h: RH1, align: 'center', bold: true, color: 'FFFFFF', fontSize: 17, fill: { color: RC[i] }, line: { color: LINE, width: 0.75 } });
+        txt(sd, t ? `${t[0]}（${t[1]} 次）` : '—', { x: X0 + LW + 0.1, y: yy, w: W - LW - 0.2, h: RH1, bold: true, fontSize: 17 });
+        [['分析原因', ft[rk], yy + RH1, hR], ['解決方式', ft[sk], yy + RH1 + hR, hS]].forEach(([lbl, tx, by, bh]) => {
+          sd.addShape(pptx.ShapeType.line, { x: X0, y: by, w: W, h: 0, line: { color: LINE, width: 0.75 } });
+          txt(sd, lbl, { x: X0, y: by, w: LW, h: bh, align: 'center', bold: true, color: TEAL, fontSize: 15, fill: { color: LT }, line: { color: LINE, width: 0.75 } });
+          txt(sd, tx || '', { x: X0 + LW + 0.1, y: by, w: W - LW - 0.2, h: bh, fontSize: 14 });
+        });
+      });
+    }
+    if (ov && ov.kpis) {
+      const T = Component.KPI_T, N = Component.kNum, RD = 'C23B3B', GN = '2E8B57';
+      const OR = 'E07B39', GY = 'C3CAC8', X0 = 0.6, W = 12.13;
+      const top = (s, b, sm) => {
+        s.background = { color: 'F3F5F4' };
+        s.addText(`${b}-自動化機故KPI`, { x: X0, y: 0.32, w: 7, h: 0.7, fontSize: 30, bold: true, color: '1B2422', fontFace: F, margin: 0 });
+        s.addText([
+          { text: `統計期間：第 ${sm.d.week || '__'} 週    `, options: { color: '3D4845' } },
+          { text: '● ', options: { color: GN } }, { text: '達標   ', options: { color: '3D4845' } },
+          { text: '● ', options: { color: RD } }, { text: '未達標   ', options: { color: '3D4845' } },
+          { text: '● ', options: { color: GY } }, { text: '未輸入', options: { color: '3D4845' } }
+        ], { x: X0 + W - 5.6, y: 0.62, w: 5.6, h: 0.36, fontSize: 11, fontFace: F, align: 'right', margin: 0 });
+        s.addShape(pptx.ShapeType.line, { x: X0, y: 1.05, w: W, h: 0, line: { color: '1B2422', width: 1.5 } });
+      };
+      ov.kpis.forEach(b => {
+        const sm = this.kpiSum(b), KH = Component.kpiHeads(sm.d), q = sm.q;
+        // A) KPI 目標 + 未達標站點 + 重大品質異常
+        const s = pptx.addSlide(); top(s, b, sm);
+        s.addShape(pptx.ShapeType.rect, { x: X0, y: 1.4, w: W, h: 0.07, fill: { color: OR }, line: { color: OR, width: 0 } });
+        s.addText([
+          { text: 'KPI 目標      ', options: { fontSize: 13, bold: true } },
+          { text: `各站機故 < ${T} 次`, options: { fontSize: 22, bold: true } },
+          { text: '      每站每週計算', options: { fontSize: 11, color: 'D6E2E0' } }
+        ], { x: X0, y: 1.47, w: W, h: 0.65, fill: { color: TEAL }, color: 'FFFFFF', fontFace: F, margin: 0.2, valign: 'middle' });
+        const LW = 8.35, BY = 2.45, BH = 4.55;
+        s.addShape(pptx.ShapeType.rect, { x: X0, y: BY, w: LW, h: BH, fill: { color: 'FFFFFF' }, line: { color: RD, width: 1.25 } });
+        s.addText([{ text: '未達標站點', options: { fontSize: 14, bold: true, color: 'A32626', breakLine: true } }, { text: '本週機故次數（由高到低）', options: { fontSize: 9, color: '5B6663' } }],
+          { x: X0 + 0.15, y: BY + 0.12, w: 5, h: 0.6, fontFace: F, margin: 0.05, valign: 'top' });
+        s.addText(sm.hasAny ? `共 ${sm.bad.length} 站` : '共 – 站', { x: X0 + LW - 2.15, y: BY + 0.12, w: 2, h: 0.32, fontSize: 11, color: '1B2422', fontFace: F, align: 'right', margin: 0.05 });
+        if (!sm.bad.length) {
+          s.addText(sm.hasAny ? '本週各站皆達標' : '尚未匯入本週 Excel 數據', { x: X0 + 0.15, y: BY + 0.8, w: LW - 0.3, h: 1.0, fontSize: 12, color: sm.hasAny ? '2E7D4F' : '5B6663', fontFace: F, align: 'center',
+            fill: { color: 'FFFFFF' }, line: { color: 'C9D1CE', width: 0.75, dashType: 'dash' } });
+        } else {
+          const MAXC = 12, list = sm.bad.slice(0, MAXC), sc = Math.max(T, ...sm.bad.map(r => N(r.vals[5]))) * 1.15;
+          const CW = 1.92, CH = 1.12, GX = 0.1, GY2 = 0.1, CX0 = X0 + 0.15, CY0 = BY + 0.8, NV = '2B3A55';
+          list.forEach((r, i) => {
+            const n = N(r.vals[5]), cx = CX0 + (i % 4) * (CW + GX), cy = CY0 + Math.floor(i / 4) * (CH + GY2), bx = cx + 0.12, bw = CW - 0.24, by = cy + 0.74;
+            s.addShape(pptx.ShapeType.roundRect, { x: cx, y: cy, w: CW, h: CH, rectRadius: 0.06, fill: { color: 'FCF3F2' }, line: { color: 'EBC4C0', width: 0.75 } });
+            s.addText(r.fl, { x: cx + 0.1, y: cy + 0.08, w: 0.42, h: 0.22, fontSize: 9, bold: true, color: 'FFFFFF', fill: { color: NV }, align: 'center', valign: 'middle', fontFace: F, margin: 0 });
+            s.addText(r.st, { x: cx + 0.56, y: cy + 0.06, w: CW - 0.62, h: 0.26, fontSize: 11, bold: true, color: '1B2422', fontFace: F, margin: 0, valign: 'middle', fit: 'shrink' });
+            s.addText([{ text: String(n), options: { fontSize: 20, bold: true, color: RD } }, { text: ' 次', options: { fontSize: 9, color: '5B6663' } }],
+              { x: cx + 0.08, y: cy + 0.32, w: CW - 0.16, h: 0.38, fontFace: F, margin: 0.02, valign: 'middle' });
+            s.addShape(pptx.ShapeType.roundRect, { x: bx, y: by, w: bw, h: 0.09, rectRadius: 0.045, fill: { color: 'ECE6E5' }, line: { color: 'ECE6E5', width: 0 } });
+            s.addShape(pptx.ShapeType.roundRect, { x: bx, y: by, w: Math.max(0.05, Math.min(bw, bw * n / sc)), h: 0.09, rectRadius: 0.045, fill: { color: RD }, line: { color: RD, width: 0 } });
+            s.addShape(pptx.ShapeType.rect, { x: bx + bw * T / sc - 0.01, y: by - 0.04, w: 0.02, h: 0.17, fill: { color: '1B2422' }, line: { color: '1B2422', width: 0 } });
+            s.addText(`目標 < ${T}`, { x: cx + 0.08, y: cy + 0.86, w: 0.95, h: 0.2, fontSize: 8, color: '5B6663', fontFace: F, margin: 0.02, valign: 'middle' });
+            s.addText(`超出 +${n - T}`, { x: cx + CW - 1.0, y: cy + 0.86, w: 0.92, h: 0.2, fontSize: 8, bold: true, color: RD, fontFace: F, margin: 0.02, align: 'right', valign: 'middle' });
+          });
+          if (sm.bad.length > MAXC) s.addText(`另有 ${sm.bad.length - MAXC} 站未達標`, { x: X0 + 0.15, y: BY + BH - 0.32, w: 4, h: 0.26, fontSize: 10, color: '5B6663', fontFace: F, margin: 0.05 });
+        }
+        const RX = X0 + LW + 0.25, RW = W - LW - 0.25;
+        s.addShape(pptx.ShapeType.rect, { x: RX, y: BY, w: RW, h: BH, fill: { color: 'FFFFFF' }, line: { color: 'D6DCDA', width: 0.75 } });
+        s.addShape(pptx.ShapeType.rect, { x: RX, y: BY, w: RW, h: 0.07, fill: { color: TEAL }, line: { color: TEAL, width: 0 } });
+        s.addText([{ text: '重大品質異常 ', options: { bold: true, color: '1B2422' } }, { text: '件/週', options: { color: '5B6663' } }], { x: RX + 0.15, y: BY + 0.25, w: RW - 0.3, h: 0.35, fontSize: 13, fontFace: F, margin: 0.05 });
+        const qv = x => (x ?? '') !== '' ? String(x) : '–';
+        [['本週', q.cur, BY + 0.8], ['上週', q.prev, BY + 1.3]].forEach(([k, v, y]) =>
+          s.addText([{ text: `${k}   `, options: { fontSize: 11, color: '3D4845' } }, { text: qv(v), options: { fontSize: 16, bold: true, color: +(v || 0) > 0 ? RD : '1B2422' } }, { text: '  件', options: { fontSize: 11, color: '3D4845' } }],
+            { x: RX + 0.15, y, w: RW - 0.3, h: 0.4, fontFace: F, margin: 0.05 }));
+        // B) 站點表格（每頁兩張表並排）
+        const groups = [];
+        sm.rows.forEach(r => { const g = parseInt(r.fl) < 8 ? 'low' : r.fl; let G = groups.find(x => x.g === g); if (!G) { G = { g, rows: [] }; groups.push(G); } G.rows.push(r); });
+        const TW = (W - 0.3) / 2, cw = [0.42, 0.85, 0.45, 0.6, 0.44, 0.44, 0.44, 0.44, 0.44, 0.44, TW - 4.96];
+        for (let gi = 0; gi < groups.length; gi += 2) {
+          const st = pptx.addSlide(); top(st, b, sm);
+          const pair = groups.slice(gi, gi + 2), mxR = Math.max(...pair.map(g => g.rows.length));
+          const rh = Math.min(0.3, 5.8 / (mxR + 1)), Y0 = 1.3;
+          pair.forEach((g, k) => {
+            const tx = X0 + k * (TW + 0.3);
+            let last = '';
+            const body = g.rows.map(r => {
+              const c = N(r.vals[5]), fl = r.fl === last ? '' : r.fl; last = r.fl;
+              const sv = c == null ? ['● 未輸入', GY, '5B6663'] : c < T ? ['● 達標', GN, GN] : ['● 未達標', RD, RD];
+              return [C(fl, { bold: true, align: 'left' }), C(r.st, { align: 'left' }), C(T, { bold: true }), C(''),
+                ...r.vals.map((x, j) => { const n = N(x); return C(x === '' ? '–' : x, { bold: n != null, color: n == null ? '5B6663' : n >= T ? RD : GN, ...(j === 5 ? { fill: { color: 'FBEDE4' } } : {}) }); }),
+                { text: [{ text: '● ', options: { color: sv[1] } }, { text: sv[0].slice(2), options: { color: sv[2], bold: true } }], options: { align: 'left' } }];
+            });
+            const hd = ['樓層', '站點', '目標', '6週趨勢', ...KH, '是否達標'].map((t, i) => i === 9 ? { text: t, options: { fill: { color: TEAL }, color: 'F2B48C', bold: true, align: 'center' } } : H(t));
+            st.addTable([hd, ...body], { x: tx, y: Y0, w: TW, colW: cw, rowH: rh, ...tblOpt, fontSize: 9, margin: 0.03,
+              border: { type: 'solid', pt: 0.5, color: 'E3E8E6' } });
+            const trX = tx + cw[0] + cw[1] + cw[2] + 0.06, trW = cw[3] - 0.12;
+            g.rows.forEach((r, i) => {
+              const y = Y0 + rh * (i + 1), nums = r.vals.map(N);
+              if (!nums.some(x => x != null)) {
+                st.addShape(pptx.ShapeType.line, { x: trX, y: y + rh * 0.35, w: trW, h: 0, line: { color: 'E8A0A0', width: 0.75, dashType: 'sysDot' } });
+                return;
+              }
+              const mx = Math.max(T, ...nums.filter(x => x != null)), bw = trW / 6;
+              nums.forEach((n, j) => {
+                const bh = n == null ? 0.015 : Math.max(0.015, rh * 0.6 * n / mx), col = n == null ? 'E3E8E6' : n >= T ? RD : '3F7F7A';
+                st.addShape(pptx.ShapeType.rect, { x: trX + j * bw + 0.01, y: y + rh * 0.8 - bh, w: bw - 0.02, h: bh, fill: { color: col }, line: { color: col, width: 0 } });
+              });
+            });
+          });
+        }
+      });
+    }
+    if (ov) { listSlide('精進改善區', ov.imps); listSlide('專案進度', ov.projs); }
+    pptx.writeFile({ fileName: `${impOnly ? onlyName : '自動化設備維運狀態'}_${ds.replace(/\./g, '')}_(Security C).pptx` });
+    this.setState({ menuOpen: false });
+  }
+  exportCsv(shown) {
+    const L = Component.LIGHTS;
+    const rows = [['廠區','樓層','負責人','站點','燈號','損壞數量','硬體損壞內容','損壞日期','預計修復日期','累積天數']];
+    shown.forEach(b => b.floors.forEach(f => f.stations.forEach(s =>
+      rows.push([b.id, f.name, f.owner, s.tag ? `${s.name}-${s.tag}` : s.name, s.lightLabel, s.dmg, s.content, s.date, s.eta, s.days]))));
+    const csv = '\ufeff' + rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = `設備維運狀態_${shown.length === 1 ? shown[0].id : 'ALL'}_${(() => { const d = new Date(); return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`; })()}_(Security C).csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    this.setState({ menuOpen: false });
+  }
+  renderVals() {
+    const D = Component.DATA, L = Component.LIGHTS;
+    let tab = this.state.tab ?? this.props.defaultBuilding ?? 'ALL';
+    if (tab === '全部') tab = 'ALL';
+    const buildings = Object.keys(D).map(id => {
+      let n = 0, machines = 0, ok = 0, fix = 0, down = 0;
+      const floors = Object.entries(D[id]).map(([fname, list]) => ({
+        name: fname,
+        owner: (this.state.owners || {})[`${id}/${fname}`] || '',
+        setOwner: e => this.setOwner(`${id}/${fname}`, e.target.value),
+        stations: list.map((raw, i) => {
+          const [name, tag = '', baseCount = '', hide] = raw.split('|');
+          if (hide) return null;
+          const key = `${id}/${fname}/${i}`;
+          const counts = this.state.counts || {};
+          const count = key in counts ? counts[key] : baseCount;
+          const lv = L[this.state.lights[key] || 0];
+          n++; machines += Number(count) || 0;
+          if (lv.label === '正常') ok++; else if (lv.label === '維修中') fix++; else down++;
+          const date = (this.state.dates || {})[key] || '';
+          let days = '';
+          if (date) { const d0 = new Date(date + 'T00:00:00'), t = new Date(); t.setHours(0,0,0,0); days = Math.max(0, Math.round((t - d0) / 86400000)); }
+          return { name, tag, count, date, days, daysUnit: date ? '天' : '', daysColor: '#1b2422',
+            setDate: e => this.setDate(key, e.target.value),
+            setCount: e => this.setCount(key, e.target.value),
+            dmg: (this.state.dmgs || {})[key] ?? '', setDmg: e => this.setDmg(key, e.target.value),
+            content: (this.state.contents || {})[key] || '', contentRows: ((this.state.contents || {})[key] || '').split('\n').length, setContent: e => this.setContent(key, e.target.value),
+            eta: (this.state.etas || {})[key] || '', setEta: e => this.setEta(key, e.target.value), lightColor: lv.c, lightHalo: lv.h, lightLabel: lv.label, rowBg: lv.bg,
+            cycle: () => this.cycle(key) };
+        }).filter(Boolean).map((s, i, arr) => ({ ...s, bottom: i < arr.length - 1 ? '1px solid #a9b3b0' : '0' }))
+      }));
+      return { id, floors, n, ok, fix, down, summary: `${floors.length} 個樓層 · ${n} 個站點（正常 ${ok} / 維修 ${fix}${down ? ` / 停機 ${down}` : ''}）` + (false ? ` · 機台 ${machines} 台` : '') };
+    });
+    const total = buildings.reduce((a, b) => a + b.n, 0);
+    const siteIds = ['ALL', ...buildings.map(b => b.id)], onSite = siteIds.includes(tab);
+    const siteVals = {
+      siteOpts: siteIds.map(v => ({ v })), siteSel: onSite ? tab : 'ALL',
+      siteBg: onSite ? 'oklch(0.34 0.06 190)' : '#fff', siteFg: onSite ? '#fff' : 'oklch(0.34 0.06 190)',
+      pickSite: e => this.setState({ tab: e.target.value })
+    };
+    const tabs = [{ label: '自動化整體維運狀態' }].map(t => ({
+      ...t, bg: t.label === tab ? 'oklch(0.34 0.06 190)' : '#fff', fg: t.label === tab ? '#fff' : 'oklch(0.34 0.06 190)',
+      select: () => this.setState({ tab: t.label })
+    }));
+    const shown = (tab === 'ALL' || tab === '全部') ? buildings : buildings.filter(b => b.id === tab);
+    const memo = this.state.memo || '', open = !!this.state.memoPage;
+    const memoVals = {
+      memo, hasMemo: !!memo.trim() && !open, memoVisible: open,
+      memoNoPrint: memo.trim() ? undefined : '1',
+      memoSaved: this.state.memoAt ? `最後更新 ${this.state.memoAt}` : '自動儲存',
+      memoBtnBg: open ? 'oklch(0.34 0.06 190)' : '#fff', memoBtnFg: open ? '#fff' : 'oklch(0.34 0.06 190)',
+      toggleMemo: () => this.setState(s => ({ memoPage: !s.memoPage, craneOpen: false, impPage: false })),
+      setMemo: e => {
+        const text = e.target.value, d = new Date();
+        const at = `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        try { localStorage.setItem('equip-status-memo', JSON.stringify({ text, at })); } catch (err) {}
+        this.setState({ memo: text, memoAt: at });
+      }
+    };
+    const cranes = [];
+    buildings.forEach(b => b.floors.forEach(f => f.stations.forEach(st => {
+      if (st.tag === '天車') cranes.push({ ...st, b: b.id, f: f.name });
+    })));
+    let totalUnused = 0;
+    const NEXT = { '': 'V', V: 'X', X: '' };
+    const carBlocks = Component.CARS.map(blk => {
+      const cars = this.getCars(blk);
+      const slots = Math.max(32, Math.ceil((cars.length + 1) / 16) * 16);
+      const rows = [];
+      for (let r = 0; r < slots; r += 16) {
+        const cells = [];
+        for (let i = r; i < r + 16; i++) {
+          const c = cars[i] || { no: '', st: '' };
+          const has = !!(c.no || '').trim(), st = has ? (c.st === 'X' ? 'X' : 'V') : '';
+          cells.push({ no: c.no, mark: st,
+            bg: st === 'V' ? 'oklch(0.68 0.15 150)' : st === 'X' ? 'oklch(0.6 0.19 25)' : '#fff',
+            fg: st ? '#fff' : '#1b2422', cursor: has ? 'pointer' : 'default',
+            setNo: e => this.updateCar(blk, i, { no: e.target.value, st: (c.st === 'X' ? 'X' : 'V') }),
+            toggle: () => { if (has) this.updateCar(blk, i, { st: st === 'V' ? 'X' : 'V' }); } });
+        }
+        rows.push({ cells });
+      }
+      const real = cars.filter(c => (c.no || '').trim());
+      const bad = real.filter(c => c.st === 'X').length, used = real.length - bad;
+      totalUnused += bad;
+      return { id: blk.id, label: blk.label || blk.id, countLabel: `總車數:${cars.filter(c => (c.no || '').trim()).length}`, rows, used, unused: bad };
+    });
+    const carSel = this.state.carTab && carBlocks.some(b => b.id === this.state.carTab) ? this.state.carTab : carBlocks[0]?.id;
+    const carTabs = carBlocks.map(b => ({ label: b.label, bg: b.id === carSel ? 'oklch(0.34 0.06 190)' : '#fff', fg: b.id === carSel ? '#fff' : 'oklch(0.34 0.06 190)', select: () => this.setState({ carTab: b.id }) }));
+    const carShown = carBlocks.filter(b => b.id === carSel);
+    const craneBad = totalUnused;
+    const craneOpen = !!this.state.craneOpen;
+    const craneVals = {
+      carTotal: carBlocks.reduce((a, b) => a + b.used + b.unused, 0),
+      carTotalOk: carBlocks.reduce((a, b) => a + b.used, 0),
+      carTotalBad: carBlocks.reduce((a, b) => a + b.unused, 0),
+      cranes, carBlocks, carTabs, carShown, craneOpen, craneAlert: craneBad > 0, craneAlertCount: craneBad,
+      craneSummary: `${carBlocks.length} 個天車站點`,
+      craneBtnBg: craneOpen ? 'oklch(0.34 0.06 190)' : '#fff', craneBtnFg: craneOpen ? '#fff' : 'oklch(0.34 0.06 190)',
+      toggleCrane: () => this.setState(s => ({ craneOpen: !s.craneOpen, kpiPage: false, memoPage: false, impPage: false }))
+    };
+    const impOpen = !!this.state.impPage && !craneOpen && !open;
+    const kind = ['proj', 'fail'].includes(this.state.impPage) ? this.state.impPage : 'imp';
+    const SK = { proj: 'projs', fail: 'fails' }[kind] || 'imps', LK = { proj: 'equip-status-project', fail: 'equip-status-failure' }[kind] || 'equip-status-improve';
+    const impsAll = this.state.imps || [], projsAll = this.state.projs || [], failsAll = this.state.fails || [];
+    const KL = { imp: { title: '精進改善區', sum: '改善總表', det: '改善明細', add: '＋ 新增改善項目', issue: '問題描述' },
+      proj: { title: '專案進度', sum: '專案總表', det: '專案明細', add: '＋ 新增專案項目', issue: '專案名稱' },
+      fail: { title: '機故分析', sum: '機故總表', det: '機故明細', add: '＋ 新增機故項目', issue: '故障描述' } }[kind];
+    const impList = this.state[SK] || [];
+    const saveImps = list => { try { localStorage.setItem(LK, JSON.stringify(list)); } catch (e) {} this.setState({ [SK]: list }); };
+    const upd = (id, k) => e => saveImps((this.state[SK] || []).map(x => x.id === id ? { ...x, [k]: e.target.value } : x));
+    const projSel = impList.some(x => x.id === this.state.projSub) ? this.state.projSub : null;
+    const imgList = (x, f) => (x[f] || []).map((src, k) => ({ src, bg: `url("${Component.imgSrc(src)}")`, w: 220, view: () => this.setState({ viewImg: Component.imgSrc(src) }),
+      del: () => { if (confirm('移除這張圖片？')) {
+        saveImps((this.state[SK] || []).map(y => y.id === x.id ? { ...y, [f]: (y[f] || []).filter((_, j) => j !== k) } : y));
+        if (/^uploads\//.test(src)) fetch((window.__API_BASE || '') + 'api/' + src, { method: 'DELETE' }).catch(() => {});
+      } } }));
+    const imgAdd = (x, f) => async e => {
+      const files = [...(e.target.files || [])]; e.target.value = '';
+      const out = [];
+      for (const file of files) out.push(await Component.upload(file));
+      const next = (this.state[SK] || []).map(y => y.id === x.id ? { ...y, [f]: [...(y[f] || []), ...out.filter(Boolean)] } : y);
+      try { localStorage.setItem(LK, JSON.stringify(next)); this.setState({ [SK]: next }); }
+      catch (err) { alert('圖片儲存失敗：後端未啟動，請先執行 app.py'); }
+    };
+    const ST_BG = { '規劃中': 'oklch(0.55 0.02 200)', '進行中': 'oklch(0.66 0.15 70)', '已完成': 'oklch(0.58 0.14 150)' };
+    const fx = this.state.failText || {};
+    const fd = (() => {
+      const f = this.state.failData; if (!f || !f.rows || !f.headers) return null;
+      const H = f.headers, find = re => H.findIndex(h => re.test(h));
+      const em = find(/^\s*error\s*_?\s*message\s*$/i);
+      const col = Number.isInteger(f.col) && f.col >= 0 && f.col < H.length ? f.col : (em >= 0 ? em : 0);
+      let cnt = Number.isInteger(f.cnt) ? f.cnt : -1;
+      if (cnt >= 0) { const vals = f.rows.map(r => String(r[cnt] ?? '').replace(/,/g, '').trim()).filter(Boolean); if (!vals.length || vals.some(v => isNaN(Number(v)))) cnt = -1; }
+      let dcol = Number.isInteger(f.dcol) && f.dcol >= 0 ? f.dcol : find(/^\s*log\s*_?\s*date\s*$/i);
+      if (dcol < 0) dcol = find(/logdate|date|日期/i);
+      const dates = Array.isArray(f.dates) && f.dates.length === f.rows.length ? f.dates : (dcol >= 0 ? f.rows.map(r => Component.toDay(r[dcol])) : null);
+      return { ...f, col, cnt, dcol, dates: dates && dates.some(Boolean) ? dates : null };
+    })();
+    const saveFail = (data, text) => {
+      const st = { failData: data !== undefined ? data : this.state.failData, failText: text || this.state.failText || {} };
+      try { localStorage.setItem('equip-status-failtop3', JSON.stringify(st)); } catch (e) { alert('儲存空間不足，資料只保留在本次開啟'); }
+      this.setState(st);
+    };
+    let failTotalN = 0;
+    const failTopRaw = (() => {
+      if (!fd || !fd.rows) return [];
+      const m = new Map();
+      fd.rows.forEach((r, ri) => {
+        if (fd.dates && (fd.from || fd.to)) { const d = fd.dates[ri]; if (!d || (fd.from && d < fd.from) || (fd.to && d > fd.to)) return; }
+        const label = Component.cleanErr(r[fd.col]); if (!label) return;
+        const key = label.toLowerCase();
+        const n = fd.cnt >= 0 ? (Number(String(r[fd.cnt]).replace(/,/g, '')) || 0) : 1;
+        if (!n) return;
+        const e = m.get(key) || { n: 0, v: new Map() };
+        e.n += n; e.v.set(label, (e.v.get(label) || 0) + n); m.set(key, e);
+      });
+      const all = [...m.values()].map(e => [[...e.v.entries()].sort((a, b) => b[1] - a[1])[0][0], e.n]).sort((a, b) => b[1] - a[1]);
+      failTotalN = all.reduce((a, b) => a + b[1], 0);
+      return all.slice(0, 3);
+    })();
+    const BADGE = ['oklch(0.55 0.19 25)', 'oklch(0.66 0.15 60)', 'oklch(0.55 0.08 200)'];
+    const failTop = [0, 1, 2].map(i => ({ rank: `TOP${i + 1}`, badge: BADGE[i], border: i ? '1px solid #c9d1ce' : '0',
+      name: failTopRaw[i] ? failTopRaw[i][0] : (i === 0 && !fd ? '請匯入Excel檔，系統會自動統計機故最多的項目' : '—'),
+      n: failTopRaw[i] ? `${failTopRaw[i][1]} 次` : '',
+      pct: failTopRaw[i] && failTotalN ? `${Math.round(failTopRaw[i][1] / failTotalN * 1000) / 10}%` : '—',
+      pctColor: i === 0 ? 'oklch(0.5 0.19 25)' : '#1b2422',
+      w: failTopRaw[i] ? `${Math.round(failTopRaw[i][1] / failTopRaw[0][1] * 100)}%` : '0%' }));
+    const failVals = {
+      failOpen: impOpen && kind === 'fail', failHasData: !!fd, failTop, failTopRaw,
+      failBlocks: [0, 1, 2].map(i => {
+        const rk = i ? `reason${i + 1}` : 'reason', sk = i ? `solution${i + 1}` : 'solution';
+        return { rank: `TOP${i + 1}`, badge: BADGE[i],
+          name: failTopRaw[i] ? `${failTopRaw[i][0]}（${failTopRaw[i][1]} 次）` : '—',
+          reason: fx[rk] || '', solution: fx[sk] || '',
+          reasonRows: Math.max(3, (fx[rk] || '').split('\n').length), solutionRows: Math.max(3, (fx[sk] || '').split('\n').length),
+          setReason: e => saveFail(undefined, { ...(this.state.failText || {}), [rk]: e.target.value }),
+          setSolution: e => saveFail(undefined, { ...(this.state.failText || {}), [sk]: e.target.value }) };
+      }),
+      failInfo: fd ? `${fd.file} · ${fd.rows.length} 筆 · 匯入於 ${fd.at}` : '尚未匯入資料',
+      clearFail: () => { if (confirm('清除已匯入的 Excel 資料來源？\n（分析原因、解決方式的文字會保留）')) saveFail(null); },
+      failTotal: failTotalN, failTotalLabel: failTotalN ? `${failTotalN} 次` : '—',
+      failEq: Component.eqName(fd && fd.file), failHasEq: !!Component.eqName(fd && fd.file),
+      failHasDate: !!(fd && fd.dates), failFrom: (fd && fd.from) || '', failTo: (fd && fd.to) || '',
+      failDateCol: fd && fd.dcol >= 0 ? fd.headers[fd.dcol] : '',
+      failPeriod: fd && fd.dates ? `${(fd.from || '最早').replace(/-/g, '/')} ~ ${(fd.to || '最新').replace(/-/g, '/')} · ${fd.dates.filter(d => d && (!fd.from || d >= fd.from) && (!fd.to || d <= fd.to)).length} 筆` : '',
+      setFailFrom: e => saveFail({ ...fd, from: e.target.value }),
+      setFailTo: e => saveFail({ ...fd, to: e.target.value }),
+      failAllDates: () => saveFail({ ...fd, from: '', to: '' }),
+      failCol: String(fd ? fd.col : 0), failCnt: String(fd ? fd.cnt : -1),
+      failColOpts: (fd ? fd.headers : []).map((h, i) => ({ v: String(i), t: h })),
+      failCntOpts: [{ v: '-1', t: '每列算1次' }, ...(fd ? fd.headers : []).map((h, i) => ({ v: String(i), t: h }))],
+      setFailCol: e => saveFail({ ...fd, col: Number(e.target.value) }),
+      setFailCnt: e => saveFail({ ...fd, cnt: Number(e.target.value) }),
+      failReason: fx.reason || '', failSolution: fx.solution || '',
+      failReasonRows: Math.max(3, (fx.reason || '').split('\n').length), failSolutionRows: Math.max(3, (fx.solution || '').split('\n').length),
+      setFailReason: e => saveFail(undefined, { ...fx, reason: e.target.value }),
+      setFailSolution: e => saveFail(undefined, { ...fx, solution: e.target.value }),
+      importFail: async e => {
+        const f = e.target.files && e.target.files[0]; e.target.value = '';
+        if (!f) return;
+        if (!window.XLSX) { alert('Excel 模組載入中，請稍後再試'); return; }
+        try {
+          const wb = window.XLSX.read(await f.arrayBuffer(), { type: 'array', cellDates: true });
+          const aoa = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '', raw: false });
+          const hi = aoa.findIndex(r => r.filter(c => String(c).trim()).length >= 2);
+          if (hi < 0) { alert('檔案中找不到資料'); return; }
+          const headers = aoa[hi].map((h, i) => String(h).trim() || `欄${i + 1}`);
+          const rows = aoa.slice(hi + 1).filter(r => r.some(c => String(c).trim())).map(r => headers.map((_, i) => String(r[i] ?? '').trim()));
+          const g = re => headers.findIndex(h => re.test(h));
+          let col = g(/^\s*error\s*_?\s*message\s*$/i); if (col < 0) col = g(/errormessage|error\s*msg|錯誤訊息/i);
+          if (col < 0) col = g(/機故|故障|異常|現象|項目/); if (col < 0) col = g(/機台|設備|站點|EQ|車號/i); if (col < 0) col = 0;
+          let dcol = g(/^\s*log\s*_?\s*date\s*$/i); if (dcol < 0) dcol = g(/logdate|log\s*time|date|日期|時間/i);
+          let dates = null, from = '', to = '';
+          if (dcol >= 0) {
+            const raw = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '', raw: true }).slice(hi + 1).filter(r => r.some(c => String(c).trim()));
+            dates = rows.map((r, i) => Component.toDay(raw[i] ? raw[i][dcol] : r[dcol]) || Component.toDay(r[dcol]));
+
+          }
+          const d = new Date(), p = n => String(n).padStart(2, '0');
+          saveFail({ file: f.name, headers, rows, col, dcol, dates, from, to, cnt: g(/次數|件數|count|qty/i), at: `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}` });
+        } catch (err) { alert('無法讀取此檔案，請確認為 Excel (.xlsx / .xls) 或 CSV'); }
+      }
+    };
+    const impVals = {
+      impOpen: impOpen && kind !== 'fail',
+      impBtnBg: impOpen && kind === 'imp' ? 'oklch(0.34 0.06 190)' : '#fff', impBtnFg: impOpen && kind === 'imp' ? '#fff' : 'oklch(0.34 0.06 190)',
+      projBtnBg: impOpen && kind === 'proj' ? 'oklch(0.34 0.06 190)' : '#fff', projBtnFg: impOpen && kind === 'proj' ? '#fff' : 'oklch(0.34 0.06 190)',
+      hasViewImg: !!this.state.viewImg, viewImgBg: this.state.viewImg ? `url("${this.state.viewImg}")` : 'none', closeViewImg: () => this.setState({ viewImg: null }),
+      showSum: !projSel, showDetail: !!projSel,
+      sumTitle: KL.sum, detTitle: KL.det, backSumLabel: `← 返回${KL.sum}`,
+      showProjSum: () => this.setState({ projSub: null }),
+      isImp: kind === 'imp', isProj: kind === 'proj', issueLabel: KL.issue,
+      impTitle: KL.title, impAddLabel: KL.add,
+      failBtnBg: impOpen && kind === 'fail' ? 'oklch(0.34 0.06 190)' : '#fff', failBtnFg: impOpen && kind === 'fail' ? '#fff' : 'oklch(0.34 0.06 190)',
+      toggleFail: () => this.setState(s => ({ impPage: s.impPage === 'fail' ? false : 'fail', craneOpen: false, kpiPage: false, memoPage: false, projSub: null })),
+      toggleImp: () => this.setState(s => ({ impPage: s.impPage === 'imp' || s.impPage === true ? false : 'imp', craneOpen: false, kpiPage: false, memoPage: false, projSub: null })),
+      toggleProj: () => this.setState(s => ({ impPage: s.impPage === 'proj' ? false : 'proj', craneOpen: false, kpiPage: false, memoPage: false, projSub: null })),
+      closeImp: () => this.setState({ impPage: false }),
+      addImp: () => { const nid = Date.now(); this.setState({ projSub: nid }); saveImps([...(this.state[SK] || []), { id: nid, b: '', fl: '', st: '', issue: '', fix: '', owner: '', start: '', eta: '', status: '規劃中' }]); },
+      impSummary: `${impList.length} 項 · 進行中 ${impList.filter(x => x.status === '進行中').length} · 已完成 ${impList.filter(x => x.status === '已完成').length}`,
+      imps: impList.map((x, i) => ({ ...x, no: i + 1, status: x.status || '規劃中', statusBg: ST_BG[x.status] || ST_BG['規劃中'],
+        itemBg: i % 2 ? 'oklch(0.96 0.025 85)' : '#fff', labelBg: i % 2 ? 'oklch(0.91 0.045 85)' : 'oklch(0.95 0.018 190)',
+        anchor: `${kind}-item-${x.id}`,
+        issueLink: ((x.issue || '').trim().split('\n')[0]) || `（未填寫${KL.issue}）`,
+        jump: e => { if (e && e.preventDefault) e.preventDefault(); this.setState({ projSub: x.id }); window.scrollTo({ top: 0 }); },
+        imgs: imgList(x, 'imgs'), addImgs: imgAdd(x, 'imgs'),
+        layouts: imgList(x, 'layouts'), addLayouts: imgAdd(x, 'layouts'),
+        sims: imgList(x, 'sims'), addSims: imgAdd(x, 'sims'),
+        asis: imgList(x, 'asis'), addAsis: imgAdd(x, 'asis'),
+        tobe: imgList(x, 'tobe'), addTobe: imgAdd(x, 'tobe'),
+        reason: x.reason || '', setReason: upd(x.id, 'reason'), reasonRows: Math.max(2, (x.reason || '').split('\n').length),
+        eval: x.eval || '', setEval: upd(x.id, 'eval'), evalRows: Math.max(2, (x.eval || '').split('\n').length),
+        issueRows: Math.max(kind === 'proj' ? 1 : 2, (x.issue || '').split('\n').length), fixRows: Math.max(2, (x.fix || '').split('\n').length),
+        fl: x.fl || '', start: x.start || '', setStart: upd(x.id, 'start'), setB: upd(x.id, 'b'), setFl: upd(x.id, 'fl'), setSt: upd(x.id, 'st'), setIssue: upd(x.id, 'issue'), setFix: upd(x.id, 'fix'),
+        setOwner: upd(x.id, 'owner'), setEta: upd(x.id, 'eta'), setStatus: upd(x.id, 'status'),
+        del: () => { if (confirm(`刪除第 ${i + 1} 項？`)) this.setState({ projSub: null }), saveImps((this.state[SK] || []).filter(y => y.id !== x.id)); } }))
+    };
+    if (projSel) impVals.imps = impVals.imps.filter(x => x.id === projSel);
+    const kpiOpen = !!this.state.kpiPage && !craneOpen && !open && !impOpen;
+    const kpiVals = { kpiOpen, ...this.kpiVals(), kpiBtnBg: kpiOpen ? 'oklch(0.34 0.06 190)' : '#fff', kpiBtnFg: kpiOpen ? '#fff' : 'oklch(0.34 0.06 190)',
+      toggleKpi: () => this.setState(s => ({ kpiPage: s.kpiPage === true ? false : true, craneOpen: false, memoPage: false, impPage: false, projSub: null })) };
+    const ovOpen = tab === '自動化整體維運狀態' && !craneOpen && !open && !impOpen && !kpiOpen;
+    const sum = k => buildings.reduce((a, b) => a + b[k], 0);
+    const pct = (a, b) => b ? `${Math.round(a / b * 1000) / 10}%` : '—';
+    const ovRows = buildings.map(b => ({ id: b.id, floors: b.floors.length, n: b.n, ok: b.ok, fix: b.fix, down: b.down,
+      rate: pct(b.ok, b.n), rateColor: b.n && b.ok < b.n ? 'oklch(0.5 0.19 25)' : '#1b2422',
+      open: () => this.setState({ tab: b.id }) }));
+    const ovFixList = [];
+    buildings.forEach(b => b.floors.forEach(f => f.stations.forEach(st => {
+      if (st.lightLabel === '維修中') ovFixList.push({ b: b.id, f: f.name, owner: f.owner || '', name: st.tag ? `${st.name} ${st.tag}` : st.name,
+        dmg: st.dmg || '', content: st.content || '', date: st.date ? st.date.replace(/-/g, '/') : '', eta: st.eta ? st.eta.replace(/-/g, '/') : '',
+        days: st.date ? `${st.days} 天` : '', open: () => this.setState({ tab: b.id }) });
+    })));
+    const ovVals = { ovOpen, ovRows, ovFixList, ovHasFix: ovFixList.length > 0, ovNoFix: ovFixList.length === 0,
+      ovN: total, ovOk: sum('ok'), ovFix: sum('fix'), ovDown: sum('down'), ovRate: pct(sum('ok'), total),
+      openCrane: () => this.setState({ craneOpen: true, memoPage: false, impPage: false }) };
+    const subPage = craneOpen || open || ovOpen || impOpen || kpiOpen;
+    tabs.forEach(t => { if (craneOpen || open || impOpen || kpiOpen) { t.bg = '#fff'; t.fg = 'oklch(0.34 0.06 190)'; } t.select = () => this.setState({ tab: t.label, craneOpen: false, kpiPage: false, memoPage: false, impPage: false }); });
+    if (craneOpen || open || impOpen || kpiOpen || !onSite) { siteVals.siteBg = '#fff'; siteVals.siteFg = 'oklch(0.34 0.06 190)'; siteVals.siteSel = ''; }
+    siteVals.pickSite = e => this.setState({ tab: e.target.value, craneOpen: false, kpiPage: false, memoPage: false, impPage: false });
+    return { ...memoVals, ...craneVals, ...ovVals, ...impVals, ...failVals, ...siteVals, ...kpiVals, tabs, shown: subPage ? [] : shown, rowH: this.props.compact ? '32px' : '42px',
+      menuOpen: !!this.state.menuOpen, tabLabel: tab,
+      toggleMenu: () => this.setState(s => ({ menuOpen: !s.menuOpen })),
+      exportCsv: () => this.exportCsv(buildings),
+      exportImp: () => this.exportPptx([], { imps: impsAll }, 'imp'),
+      exportProj: () => this.exportPptx([], { projs: projsAll }, 'proj'),
+      exportKpiPptx: () => this.exportPptx([], { kpis: ['K11', 'K18', 'K21', 'K22', 'K25'] }, 'kpi'),
+      kpiExpBtns: ['K11', 'K18', 'K21', 'K22', 'K25'].map(id => ({ id, run: () => this.exportPptx([], { kpis: [id] }, 'kpi') })),
+      exportFail: () => this.exportPptx([], { failTop: failTopRaw, failText: fx, failPeriod: failVals.failPeriod, failEq: failVals.failEq, failTotal: failVals.failTotal, fails: (failTopRaw.length || Object.values(fx).some(Boolean)) ? [1] : [] }, 'fail'),
+      exportPptx: () => this.exportPptx(buildings, { ...ovVals, kpis: ['K11', 'K18', 'K21', 'K22', 'K25'], carTotal: craneVals.carTotal, carTotalOk: craneVals.carTotalOk, carTotalBad: craneVals.carTotalBad, imps: impsAll, projs: projsAll, failTop: failTopRaw, failText: fx, failPeriod: failVals.failPeriod, failEq: failVals.failEq, failTotal: failVals.failTotal }),
+      exportPrint: () => this.setState({ menuOpen: false }, () => setTimeout(() => {
+        const old = document.title, d = new Date();
+        document.title = `自動化設備維運狀態_${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}_(Security C)`;
+        window.print(); setTimeout(() => { document.title = old; }, 500);
+      }, 50)) };
+  }
+}</script>
+</body>
+</html>
